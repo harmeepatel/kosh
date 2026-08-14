@@ -1,8 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class Scale {
-  Scale._();
+class Spacing {
+  Spacing._();
 
   static const ratio = 1.25;
   static const base = 16.0;
@@ -22,13 +21,20 @@ class Scale {
   static const xl5 = xl4 * ratio;
   static const xl6 = xl5 * ratio;
   static const xl7 = xl6 * ratio;
+}
 
-  static const topBlurHeight = 80.0;
-  static const topBlurPadding = topBlurHeight * 0.6;
-  static double topBarInset(BuildContext context) =>
-      topBlurHeight + MediaQuery.paddingOf(context).top;
+class AppGeometry {
+  AppGeometry._();
 
-  static const screenEdgePadding = xs5;
-
+  static const topBarHeight = 56.0;
+  static const screenEdgePadding = Spacing.xs3;
   static const borderRadius = 8.0;
+}
+
+class AppInsets {
+  AppInsets._();
+
+  static double topBar(BuildContext context) {
+    return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
+  }
 }

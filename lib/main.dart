@@ -31,11 +31,11 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  final scrollOffset = ValueNotifier<double>(0);
+  final _scrollOffset = ValueNotifier<double>(0);
 
   @override
   void dispose() {
-    scrollOffset.dispose();
+    _scrollOffset.dispose();
     super.dispose();
   }
 
@@ -46,60 +46,21 @@ class _AppShellState extends State<AppShell> {
       child: Stack(
         children: [
           ScreenContent(
+            onScroll: (offset) => _scrollOffset.value = offset,
             child: widget.child,
           ),
-          TopAppBar(
-            scrollOffset: scrollOffset,
-            children: const [Text('Hello')],
+
+          TopBar(
+            scrollOffset: _scrollOffset,
+            child: Row(
+              children: [Text('Home', style: TextStyle(fontSize: 32, fontWeight: .w200))],
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-// class MainApp extends StatefulWidget {
-//   const MainApp({super.key});
-
-//   @override
-//   State<MainApp> createState() => _MainAppState();
-// }
-
-// class _MainAppState extends State<MainApp> {
-//   final scrollOffset = ValueNotifier<double>(0);
-
-//   @override
-//   void dispose() {
-//     scrollOffset.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return WidgetsApp(
-//       debugShowCheckedModeBanner: false,
-//       showPerformanceOverlay: false,
-//       color: Colors.black,
-//       builder: (context, child) {
-//         return ColoredBox(
-//           color: Colors.black,
-//           child: Stack(
-//             children: [
-//               NotificationListener<ScrollNotification>(
-//                 onNotification: (n) {
-//                   scrollOffset.value = n.metrics.pixels;
-//                   return false;
-//                 },
-//                 child: const ScreenContent(child: PlaceholderTab()),
-//               ),
-//               TopAppBar(scrollOffset: scrollOffset, children: [Text("hello")]),
-//             ],
-//           ),
-//         );
-//       },
-//     );
-//   }
-// }
 
 class PlaceholderTab extends StatelessWidget {
   const PlaceholderTab({super.key});
@@ -115,7 +76,10 @@ class PlaceholderTab extends StatelessWidget {
               height: 300,
               color: Colors.blue.withAlpha(Random().nextInt(256)),
               alignment: .center,
-              child: Text('$i'),
+              child: Text(
+                '$i',
+                style: TextStyle(fontSize: 24, fontWeight: .w100),
+              ),
             ),
         ],
       ),
