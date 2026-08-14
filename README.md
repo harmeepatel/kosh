@@ -1,3 +1,3 @@
 # kosh
 
-A new Flutter project.
+An offline music player.
