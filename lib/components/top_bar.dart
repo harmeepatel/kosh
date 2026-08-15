@@ -21,10 +21,11 @@ class TopBar extends StatelessWidget {
       child: ValueListenableBuilder<double>(
         valueListenable: scrollOffset,
         builder: (context, offset, _) {
-          final progress = (offset / 64.0).clamp(0.0, 1.0);
+          final progress = (offset / AppGeometry.topBarHeight).clamp(0.0, 1.0);
 
           return Stack(
             children: [
+              // Placeholder(strokeWidth: 0.5,),
               _BlurLayer(progress: progress),
               _TopBarContent(progress: progress, child: child),
             ],
@@ -42,7 +43,7 @@ class _BlurLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sigma = Spacing.xl3 * progress;
+    final sigma = Spacing.xl * progress;
 
     return Inspire.backdropBlur(
       config: InspireBlurConfig.topToBottom(sigma: sigma),
@@ -58,6 +59,11 @@ class _TopBarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final child = this.child;
+    if (child == null) {
+      return const SizedBox.shrink();
+    }
+
     final titleScale = lerpDouble(1.0, 0.5, progress);
 
     return SafeArea(
@@ -68,11 +74,26 @@ class _TopBarContent extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppGeometry.screenEdgePadding,
           ),
+          // TODO: currently this button also shrinks on scroll, make it so only text scales and nothing else
           child: Transform.scale(
             scale: titleScale,
             alignment: Alignment.topLeft,
             child: child,
           ),
+          // child: Opacity(
+          //   opacity: lerpDouble(1, 0, progress * 2)!.clamp(0, 1),
+          //   child: Transform.scale(
+          //     scale: titleScale,
+          //     alignment: Alignment.topLeft,
+          //     child: ImageFiltered(
+          //       imageFilter: ImageFilter.blur(
+          //         sigmaX: progress * 20.0,
+          //         sigmaY: progress * 20.0,
+          //       ),
+          //       child: child,
+          //     ),
+          //   ),
+          // ),
         ),
       ),
     );

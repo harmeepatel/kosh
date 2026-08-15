@@ -1,8 +1,8 @@
-import 'dart:math';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:kosh/components/nav.dart';
+import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
+import 'package:kosh/style.dart';
 
 void main() {
   runApp(const MainApp());
@@ -16,7 +16,7 @@ class MainApp extends StatelessWidget {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
       color: Colors.black,
-      builder: (context, _) => const AppShell(child: PlaceholderTab()),
+      builder: (context, _) => const AppShell(child: Home()),
     );
   }
 }
@@ -53,7 +53,17 @@ class _AppShellState extends State<AppShell> {
           TopBar(
             scrollOffset: _scrollOffset,
             child: Row(
-              children: [Text('Home', style: TextStyle(fontSize: 32, fontWeight: .w200))],
+              children: [
+                Text('Home', style: TextStyle(fontSize: 32, fontWeight: .w700)),
+                // TODO: currently this button also shrinks on scroll, make it so only text scales and nothing else
+                // ElevatedButton.icon(
+                //   label: Text('asdf'),
+                //   icon: const Icon(CupertinoIcons.cube),
+                //   onPressed: () {
+                //     print("asdf");
+                //   },
+                // ),
+              ],
             ),
           ),
         ],
@@ -62,27 +72,53 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class PlaceholderTab extends StatelessWidget {
-  const PlaceholderTab({super.key});
+class Home extends StatelessWidget {
+  const Home({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          for (var i = 0; i < 10; ++i)
-            Container(
-              width: 300,
-              height: 300,
-              color: Colors.blue.withAlpha(Random().nextInt(256)),
-              alignment: .center,
-              child: Text(
-                '$i',
-                style: TextStyle(fontSize: 24, fontWeight: .w100),
-              ),
+    return ListView.builder(
+      padding: EdgeInsets.only(top: AppInsets.topBar(context)),
+      itemCount: 20,
+      itemBuilder: (context, i) {
+        return Center(
+          child: Container(
+            height: 150,
+            width: 300,
+            color: Colors.blue.withAlpha(250 - ((i + 1) * 10).clamp(0, 200)),
+            alignment: Alignment.center,
+            child: Text(
+              "$i asdfasdfasdfasdfadfasdfasdfdsfasdfasdfasdfadfadsfasdfasdfasdfasdfasdfasdfasdfasdfasdfasdfa",
             ),
-        ],
-      ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class PlaceholderTab extends StatelessWidget {
+  const PlaceholderTab({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      // We still need the top padding so content doesn't hide under the TopBar
+      padding: EdgeInsets.only(top: AppInsets.topBar(context)),
+      itemCount: 20,
+      itemBuilder: (context, i) {
+        return Container(
+          height: 150,
+          color: Colors.blue.withAlpha(250 - ((i + 1) * 10).clamp(0, 200)),
+          alignment: Alignment.center,
+          child: Text(
+            '$title - Item $i',
+            style: const TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        );
+      },
     );
   }
 }

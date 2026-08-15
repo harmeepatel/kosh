@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import '../style.dart';
 
 class ScreenContent extends StatelessWidget {
   const ScreenContent({super.key, required this.child, this.onScroll});
@@ -9,15 +8,14 @@ class ScreenContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (onScroll == null) return child;
+
     return NotificationListener<ScrollUpdateNotification>(
       onNotification: (notification) {
-        onScroll?.call(notification.metrics.pixels);
+        onScroll!(notification.metrics.pixels);
         return false;
       },
-      child: ListView(
-        padding: EdgeInsets.only(top: AppInsets.topBar(context)),
-        children: [child],
-      ),
+      child: child,
     );
   }
 }
