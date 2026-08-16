@@ -31,12 +31,18 @@ class AppGeometry {
   static const borderRadius = 8.0;
 
   static const bottomPadding = 20.0;
+  static const bottomNavIconSize = 24.0;
 }
 
 class AppInsets {
   AppInsets._();
 
-  static double topBar(BuildContext context) {
+  static double topBarHeight(BuildContext context) {
     return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
   }
+
+  static double bottomNavHeight =
+      AppGeometry.bottomNavIconSize +
+      AppGeometry.bottomPadding +
+      (Spacing.md * 2);
 }

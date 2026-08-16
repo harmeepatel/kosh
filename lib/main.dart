@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
 import 'package:kosh/components/top_bar.dart';
@@ -46,15 +47,15 @@ class _AppShellState extends State<AppShell> {
 
   final List<AppTabData> _appTabs = [
     AppTabData(
-      tab: const NavTab(icon: Icons.home, label: 'Home'),
+      tab: const NavTab(icon: CupertinoIcons.music_note_list, label: 'Home'),
       page: const Home(title: "Home", color: Colors.blue),
     ),
     AppTabData(
-      tab: const NavTab(icon: Icons.library_music, label: 'Library'),
+      tab: const NavTab(icon: CupertinoIcons.square_grid_2x2, label: 'Library'),
       page: const Home(title: "Library", color: Colors.red),
     ),
     AppTabData(
-      tab: const NavTab(icon: Icons.search, label: 'Search'),
+      tab: const NavTab(icon: CupertinoIcons.search, label: 'Search'),
       page: const Home(title: "Search", color: Colors.green),
     ),
   ];
@@ -120,24 +121,27 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      padding: EdgeInsets.only(top: AppInsets.topBar(context)),
-      itemCount: 20,
+      padding: EdgeInsets.only(
+        top: AppInsets.topBarHeight(context),
+        bottom: AppInsets.bottomNavHeight,
+      ),
+      itemCount: 32,
       separatorBuilder: (context, index) => Container(
         height: 1,
-        margin: const EdgeInsets.only(
-          left: 84,
-        ), // Align the divider with the text
-        color: Colors.white24, // Subtle divider matching the screenshot
+        margin: const EdgeInsets.only(left: 75),
+        color: Colors.white12,
       ),
       itemBuilder: (context, i) {
         return GestureDetector(
-          behavior:
-              HitTestBehavior.opaque, // Ensures the whole row is clickable
+          behavior: HitTestBehavior.opaque,
           onTap: () {
             // Handle song tap
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppGeometry.screenEdgePadding,
+              vertical: AppGeometry.screenEdgePadding,
+            ),
             child: Row(
               children: [
                 // Album Art Placeholder

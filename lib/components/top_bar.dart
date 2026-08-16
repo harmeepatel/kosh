@@ -17,7 +17,7 @@ class TopBar extends StatelessWidget {
       top: 0,
       left: 0,
       right: 0,
-      height: AppInsets.topBar(context),
+      height: AppInsets.topBarHeight(context),
       child: ValueListenableBuilder<double>(
         valueListenable: scrollOffset,
         builder: (context, offset, _) {

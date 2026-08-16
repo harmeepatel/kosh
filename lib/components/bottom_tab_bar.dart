@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/style.dart';
 
+
 class NavTab {
   const NavTab({required this.icon, required this.label});
 
@@ -28,15 +29,14 @@ class BottomTabBar extends StatefulWidget {
 }
 
 class _BottomTabBarState extends State<BottomTabBar> {
-  static const _tabWidth = 48.0;
-  static const _blobWidth = 64.0;
+  static const _tabWidth = AppGeometry.bottomNavIconSize * 2;
+  static const _blobWidth = 100.0;
 
-  static const _interactionDuration = Duration(milliseconds: 200);
-  static const _blobAnimationDuration = Duration(milliseconds: 80);
+  static const _interactionDuration = Duration(milliseconds: 80);
 
   static final _blurFilter = ImageFilter.blur(
-    sigmaX: Spacing.xs5,
-    sigmaY: Spacing.xs5,
+    sigmaX: Spacing.xs2,
+    sigmaY: Spacing.xs2,
   );
 
   static final _blobBlurFilter = ImageFilter.blur(sigmaX: 30, sigmaY: 30);
@@ -48,12 +48,12 @@ class _BottomTabBarState extends State<BottomTabBar> {
   int get _activeIndex => _previewIndex ?? widget.selectedIndex;
 
   void _updateInteraction(Offset localPosition) {
-    final position = localPosition.dx - Spacing.xs;
-    final index = _indexForPosition(position);
+    final index = _indexForPosition(localPosition.dx);
+    final blobLeftEdge = localPosition.dx + Spacing.xs - (_blobWidth / 2);
 
     setState(() {
       _isInteracting = true;
-      _blobPosition = position;
+      _blobPosition = blobLeftEdge;
     });
 
     if (_previewIndex != index) {
@@ -65,17 +65,16 @@ class _BottomTabBarState extends State<BottomTabBar> {
     }
   }
 
-  int _indexForPosition(double position) {
-    final index = (position / _tabWidth).floor();
-
-    return index.clamp(0, widget.tabs.length - 1);
-  }
-
   void _startInteraction(Offset localPosition) {
     setState(() {
       _isInteracting = true;
-      _blobPosition = localPosition.dx;
+      _blobPosition = localPosition.dx + Spacing.xs - (_blobWidth / 2);
     });
+  }
+
+  int _indexForPosition(double localDx) {
+    final index = (localDx / _tabWidth).floor();
+    return index.clamp(0, widget.tabs.length - 1);
   }
 
   void _commitInteraction() {
@@ -120,24 +119,24 @@ class _BottomTabBarState extends State<BottomTabBar> {
   }
 
   Widget _buildBar() {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      foregroundDecoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.25),
-          width: 0.8,
-        ),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      decoration: const ShapeDecoration(
-        color: Color(0x20000000),
-        shape: StadiumBorder(),
-      ),
+    return ClipRRect(
+      clipBehavior: .antiAlias,
+      borderRadius: BorderRadius.circular(999),
       child: BackdropFilter(
         filter: _blurFilter,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [_buildInteractionBlob(), _buildTabs()],
+        child: Container(
+          foregroundDecoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 0.8,
+            ),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          decoration: const BoxDecoration(color: Color(0x20000000)),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [_buildInteractionBlob(), _buildTabs()],
+          ),
         ),
       ),
     );
@@ -151,16 +150,16 @@ class _BottomTabBarState extends State<BottomTabBar> {
       child: AnimatedOpacity(
         opacity: _isInteracting ? 1 : 0,
         duration: _interactionDuration,
-        curve: Curves.easeOut,
+        curve: Curves.easeInCubic,
         child: ImageFiltered(
           imageFilter: _blobBlurFilter,
           child: AnimatedContainer(
-            duration: _blobAnimationDuration,
-            curve: Curves.easeInOut,
+            duration: _interactionDuration,
+            curve: Curves.easeInCubic,
             width: _blobWidth,
             height: _blobWidth,
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: Colors.white24,
               shape: BoxShape.circle,
             ),
           ),
@@ -172,8 +171,8 @@ class _BottomTabBarState extends State<BottomTabBar> {
   Widget _buildTabs() {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: Spacing.xs,
-        vertical: Spacing.sm,
+        horizontal: Spacing.sm,
+        vertical: Spacing.md,
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -213,8 +212,8 @@ class _TabItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       tab.icon,
-      color: selected ? Colors.red.shade400 : const Color(0xffcccccc),
-      size: 24,
+      color: selected ? Colors.red.shade400 : const Color(0xffbcbcbc),
+      size: AppGeometry.bottomNavIconSize,
     );
   }
 }
