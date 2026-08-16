@@ -25,7 +25,6 @@ class TopBar extends StatelessWidget {
 
           return Stack(
             children: [
-              // Placeholder(strokeWidth: 0.5,),
               _BlurLayer(progress: progress),
               _TopBarContent(progress: progress, child: child),
             ],
@@ -64,7 +63,7 @@ class _TopBarContent extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final titleScale = lerpDouble(1.0, 0.5, progress);
+    final titleScale = lerpDouble(1, 0, progress)!;
 
     return SafeArea(
       bottom: false,
@@ -80,20 +79,6 @@ class _TopBarContent extends StatelessWidget {
             alignment: Alignment.topLeft,
             child: child,
           ),
-          // child: Opacity(
-          //   opacity: lerpDouble(1, 0, progress * 2)!.clamp(0, 1),
-          //   child: Transform.scale(
-          //     scale: titleScale,
-          //     alignment: Alignment.topLeft,
-          //     child: ImageFiltered(
-          //       imageFilter: ImageFilter.blur(
-          //         sigmaX: progress * 20.0,
-          //         sigmaY: progress * 20.0,
-          //       ),
-          //       child: child,
-          //     ),
-          //   ),
-          // ),
         ),
       ),
     );

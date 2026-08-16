@@ -29,11 +29,12 @@ class AppGeometry {
   static const topBarHeight = 64.0;
   static const screenEdgePadding = Spacing.xs3;
   static const borderRadius = 8.0;
+
+  static const bottomPadding = 20.0;
 }
 
 class AppInsets {
   AppInsets._();
-
 
   static double topBar(BuildContext context) {
     return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
