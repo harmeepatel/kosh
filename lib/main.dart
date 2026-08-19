@@ -176,8 +176,8 @@ class PHSongList extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppGeometry.screenEdgePadding,
-              vertical: AppGeometry.screenEdgePadding,
+              horizontal: AppInsets.screenEdgePadding,
+              vertical: AppInsets.screenEdgePadding,
             ),
             child: Row(
               children: [

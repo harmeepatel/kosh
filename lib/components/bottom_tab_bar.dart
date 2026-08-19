@@ -32,14 +32,14 @@ class BottomTabBar extends StatefulWidget {
 
 class _BottomTabBarState extends State<BottomTabBar> {
   static const _tabWidth = AppGeometry.bottomNavIconSize * 2;
-  static const _blobWidth = 100.0;
+  static const _blobWidth = 200.0;
 
   static final _blurFilter = ImageFilter.blur(
     sigmaX: Spacing.xs2,
     sigmaY: Spacing.xs2,
   );
 
-  static final _blobBlurFilter = ImageFilter.blur(sigmaX: 30, sigmaY: 30);
+  static final _blobBlurFilter = ImageFilter.blur(sigmaX: 32, sigmaY: 32);
 
   int? _previewIndex;
   double _blobPosition = 0;
@@ -130,35 +130,23 @@ class _BottomTabBarState extends State<BottomTabBar> {
   }
 
   Widget _buildBar() {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 8),
+    return ClipRRect(
+      clipBehavior: .antiAlias,
+      borderRadius: BorderRadius.circular(999),
+      child: BackdropFilter(
+        filter: _blurFilter,
+        child: Container(
+          foregroundDecoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 0.8,
+            ),
+            borderRadius: BorderRadius.circular(999),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        clipBehavior: .antiAlias,
-        borderRadius: BorderRadius.circular(999),
-        child: BackdropFilter(
-          filter: _blurFilter,
-          child: Container(
-            foregroundDecoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
-                width: 0.8,
-              ),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            decoration: const BoxDecoration(color: Color(0x20000000)),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [_buildInteractionBlob(), _buildTabs()],
-            ),
+          decoration: const BoxDecoration(color: Color(0x20000000)),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [_buildInteractionBlob(), _buildTabs()],
           ),
         ),
       ),

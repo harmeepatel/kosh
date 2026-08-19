@@ -80,7 +80,7 @@ class _TopBarContent extends StatelessWidget {
         height: AppGeometry.topBarHeight,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppGeometry.screenEdgePadding,
+            horizontal: AppInsets.screenEdgePadding,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

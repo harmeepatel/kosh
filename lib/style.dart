@@ -28,16 +28,17 @@ class AppGeometry {
   AppGeometry._();
 
   static const topBarHeight = 64.0;
-  static const screenEdgePadding = Spacing.xs3;
   static const borderRadius = 8.0;
 
   static const bottomPadding = 20.0;
-  static const bottomNavIconSize = 24.0;
+  static const bottomNavIconSize = 32.0;
   static const bottomNavPadding = Vec2(Spacing.sm, Spacing.md);
 }
 
 class AppInsets {
   AppInsets._();
+
+  static const screenEdgePadding = Spacing.xs3;
 
   static double topBarHeight(BuildContext context) {
     return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
