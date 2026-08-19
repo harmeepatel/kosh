@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
 import 'package:kosh/components/mini_player.dart';
+import 'package:kosh/components/player_sheet.dart';
 import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
 import 'package:kosh/style.dart';
@@ -21,7 +22,9 @@ class MainApp extends StatelessWidget {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
       color: Colors.black,
-      builder: (context, _) => const AppShell(),
+      builder: (context, _) => Overlay(
+        initialEntries: [OverlayEntry(builder: (context) => const AppShell())],
+      ),
     );
   }
 }
@@ -61,10 +64,13 @@ class _AppShellState extends State<AppShell> {
   double _lastOffset = 0.0;
   double _scrollAccumulator = 0.0;
   final _isBottomBarVisible = ValueNotifier<bool>(true);
+  final _isPlayerSheetOpen = ValueNotifier<bool>(false);
 
   @override
   void dispose() {
     _scrollOffset.dispose();
+    _isBottomBarVisible.dispose();
+    _isPlayerSheetOpen.dispose();
     super.dispose();
   }
 
@@ -130,23 +136,21 @@ class _AppShellState extends State<AppShell> {
             ),
           ),
 
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: AppInset.bottomNavHeight + Spacing.xs,
-            child: const MiniPlayer(),
-            // child: ValueListenableBuilder<bool>(
-            //   valueListenable: _isBottomBarVisible,
-            //   builder: (context, isVisible, _) {
-            //     return AnimatedScale(
-            //       scale: isVisible ? 1.0 : 0.618,
-            //       duration: AppTiming.md,
-            //       curve: Curves.easeOutCubic,
-            //       alignment: Alignment.bottomCenter,
-            //       child: const MiniPlayer(),
-            //     );
-            //   },
-            // ),
+          ValueListenableBuilder<bool>(
+            valueListenable: _isBottomBarVisible,
+            builder: (context, isVisible, _) {
+              return AnimatedPositioned(
+                duration: AppTiming.md,
+                curve: Curves.easeOutCubic,
+                left: 0,
+                right: 0,
+                // 1. Slide down when the bottom bar hides
+                bottom: isVisible
+                    ? AppInset.bottomNavHeight + Spacing.xs
+                    : AppGeometry.bottomPadding,
+                child: MiniPlayer(onTap: () => _isPlayerSheetOpen.value = true),
+              );
+            },
           ),
 
           BottomTabBar(
@@ -163,6 +167,8 @@ class _AppShellState extends State<AppShell> {
               _scrollOffset.value = scrollOffsets[i];
             }),
           ),
+
+          PlayerSheet(isOpenNotifier: _isPlayerSheetOpen),
         ],
       ),
     );

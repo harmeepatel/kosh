@@ -28,9 +28,10 @@ class AppGeometry {
 
   static const topBarHeight = 64.0;
   static const borderRadius = 8.0;
+  static const deviceCornerRadius = 50.0;
 
   static const bottomPadding = 20.0;
-  static const bottomNavIconSize = 32.0;
+  static const bottomNavIconSize = 28.0;
   static const bottomNavPadding = Spacing.sm;
 }
 
@@ -55,7 +56,7 @@ class AppTiming {
   static const scrollBuffer = 10.0;
 
   static const sm = Duration(milliseconds: 100);
-  static const md = Duration(milliseconds: 250);
+  static const md = Duration(milliseconds: 150);
 }
 
 class AppBlur {

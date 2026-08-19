@@ -113,7 +113,7 @@ class _BottomTabBarState extends State<BottomTabBar> {
         valueListenable: widget.isVisibleNotifier,
         builder: (context, isVisible, _) {
           return AnimatedScale(
-            scale: isVisible ? 1.0 : 0.618,
+            scale: isVisible ? 1.0 : 0.2,
             duration: AppTiming.md,
             curve: Curves.easeOutCubic,
             alignment: Alignment.bottomCenter,
