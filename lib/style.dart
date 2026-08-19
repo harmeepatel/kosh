@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:kosh/utils.dart';
 
 class Spacing {
   Spacing._();
@@ -32,13 +31,13 @@ class AppGeometry {
 
   static const bottomPadding = 20.0;
   static const bottomNavIconSize = 32.0;
-  static const bottomNavPadding = Vec2(Spacing.sm, Spacing.md);
+  static const bottomNavPadding = Spacing.sm;
 }
 
-class AppInsets {
-  AppInsets._();
+class AppInset {
+  AppInset._();
 
-  static const screenEdgePadding = Spacing.xs3;
+  static const screenEdgePadding = Spacing.xs2;
 
   static double topBarHeight(BuildContext context) {
     return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
@@ -47,14 +46,20 @@ class AppInsets {
   static double bottomNavHeight =
       AppGeometry.bottomNavIconSize +
       AppGeometry.bottomPadding +
-      (AppGeometry.bottomNavPadding.y * 2);
+      (AppGeometry.bottomNavPadding * 2);
 }
 
-class AppTimings {
-  AppTimings._();
+class AppTiming {
+  AppTiming._();
 
   static const scrollBuffer = 10.0;
 
   static const sm = Duration(milliseconds: 100);
   static const md = Duration(milliseconds: 250);
+}
+
+class AppBlur {
+  AppBlur._();
+
+  static const bottomNavBlur = Spacing.xs2;
 }

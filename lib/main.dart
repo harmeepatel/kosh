@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
+import 'package:kosh/components/mini_player.dart';
 import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
 import 'package:kosh/style.dart';
@@ -91,7 +92,7 @@ class _AppShellState extends State<AppShell> {
           }
           _scrollAccumulator += deltaSinceLastFrame;
 
-          if (_scrollAccumulator > AppTimings.scrollBuffer) {
+          if (_scrollAccumulator > AppTiming.scrollBuffer) {
             _isBottomBarVisible.value = false;
           }
         } else if (deltaSinceLastFrame < 0) {
@@ -101,7 +102,7 @@ class _AppShellState extends State<AppShell> {
           }
           _scrollAccumulator += deltaSinceLastFrame;
 
-          if (_scrollAccumulator < -AppTimings.scrollBuffer) {
+          if (_scrollAccumulator < -AppTiming.scrollBuffer) {
             _isBottomBarVisible.value = true;
           }
         }
@@ -127,6 +128,25 @@ class _AppShellState extends State<AppShell> {
               AppTab.values[_selectedIndex].label,
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
             ),
+          ),
+
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: AppInset.bottomNavHeight + Spacing.xs,
+            child: const MiniPlayer(),
+            // child: ValueListenableBuilder<bool>(
+            //   valueListenable: _isBottomBarVisible,
+            //   builder: (context, isVisible, _) {
+            //     return AnimatedScale(
+            //       scale: isVisible ? 1.0 : 0.618,
+            //       duration: AppTiming.md,
+            //       curve: Curves.easeOutCubic,
+            //       alignment: Alignment.bottomCenter,
+            //       child: const MiniPlayer(),
+            //     );
+            //   },
+            // ),
           ),
 
           BottomTabBar(
@@ -159,8 +179,8 @@ class PHSongList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: EdgeInsets.only(
-        top: AppInsets.topBarHeight(context),
-        bottom: AppInsets.bottomNavHeight,
+        top: AppInset.topBarHeight(context),
+        bottom: AppInset.bottomNavHeight,
       ),
       itemCount: 32,
       separatorBuilder: (context, index) => Container(
@@ -176,8 +196,8 @@ class PHSongList extends StatelessWidget {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppInsets.screenEdgePadding,
-              vertical: AppInsets.screenEdgePadding,
+              horizontal: AppInset.screenEdgePadding,
+              vertical: AppInset.screenEdgePadding,
             ),
             child: Row(
               children: [

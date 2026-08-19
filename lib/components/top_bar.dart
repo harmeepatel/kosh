@@ -22,7 +22,7 @@ class TopBar extends StatelessWidget {
     return Positioned(
       left: 0,
       right: 0,
-      height: AppInsets.topBarHeight(context),
+      height: AppInset.topBarHeight(context),
       child: ValueListenableBuilder<double>(
         valueListenable: scrollOffset,
         builder: (context, offset, _) {
@@ -80,7 +80,7 @@ class _TopBarContent extends StatelessWidget {
         height: AppGeometry.topBarHeight,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppInsets.screenEdgePadding,
+            horizontal: AppInset.screenEdgePadding,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -35,8 +35,8 @@ class _BottomTabBarState extends State<BottomTabBar> {
   static const _blobWidth = 200.0;
 
   static final _blurFilter = ImageFilter.blur(
-    sigmaX: Spacing.xs2,
-    sigmaY: Spacing.xs2,
+    sigmaX: AppBlur.bottomNavBlur,
+    sigmaY: AppBlur.bottomNavBlur,
   );
 
   static final _blobBlurFilter = ImageFilter.blur(sigmaX: 32, sigmaY: 32);
@@ -114,7 +114,7 @@ class _BottomTabBarState extends State<BottomTabBar> {
         builder: (context, isVisible, _) {
           return AnimatedScale(
             scale: isVisible ? 1.0 : 0.618,
-            duration: AppTimings.md,
+            duration: AppTiming.md,
             curve: Curves.easeOutCubic,
             alignment: Alignment.bottomCenter,
             child: SafeArea(
@@ -160,12 +160,12 @@ class _BottomTabBarState extends State<BottomTabBar> {
       left: _blobPosition,
       child: AnimatedOpacity(
         opacity: _isInteracting ? 1 : 0,
-        duration: AppTimings.sm,
+        duration: AppTiming.sm,
         curve: Curves.easeInCubic,
         child: ImageFiltered(
           imageFilter: _blobBlurFilter,
           child: AnimatedContainer(
-            duration: AppTimings.sm,
+            duration: AppTiming.sm,
             curve: Curves.easeInCubic,
             width: _blobWidth,
             height: _blobWidth,
@@ -182,8 +182,8 @@ class _BottomTabBarState extends State<BottomTabBar> {
   Widget _buildTabs() {
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: AppGeometry.bottomNavPadding.x,
-        vertical: AppGeometry.bottomNavPadding.y,
+        horizontal: AppGeometry.bottomNavPadding,
+        vertical: AppGeometry.bottomNavPadding,
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
