@@ -12,7 +12,9 @@ class ScreenContent extends StatelessWidget {
 
     return NotificationListener<ScrollUpdateNotification>(
       onNotification: (notification) {
-        onScroll!(notification.metrics.pixels);
+        if (notification.metrics.axis == Axis.vertical) {
+          onScroll!(notification.metrics.pixels);
+        }
         return false;
       },
       child: child,

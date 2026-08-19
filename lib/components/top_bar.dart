@@ -6,15 +6,20 @@ import 'package:inspire_blur/inspire_blur.dart';
 import 'package:kosh/style.dart';
 
 class TopBar extends StatelessWidget {
-  const TopBar({super.key, required this.scrollOffset, this.child});
+  const TopBar({
+    super.key,
+    required this.scrollOffset,
+    this.title,
+    this.children,
+  });
 
   final ValueListenable<double> scrollOffset;
-  final Widget? child;
+  final Widget? title;
+  final List<Widget>? children;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 0,
       left: 0,
       right: 0,
       height: AppInsets.topBarHeight(context),
@@ -26,7 +31,11 @@ class TopBar extends StatelessWidget {
           return Stack(
             children: [
               _BlurLayer(progress: progress),
-              _TopBarContent(progress: progress, child: child),
+              _TopBarContent(
+                progress: progress,
+                title: title,
+                actions: children,
+              ),
             ],
           );
         },
@@ -42,42 +51,49 @@ class _BlurLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sigma = Spacing.xl * progress;
+    final sigma = Spacing.md * progress;
 
     return Inspire.backdropBlur(
-      config: InspireBlurConfig.topToBottom(sigma: sigma),
+      config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.2),
     );
   }
 }
 
+// Define specific parameters for the title and optional actions
 class _TopBarContent extends StatelessWidget {
-  const _TopBarContent({required this.progress, this.child});
+  const _TopBarContent({required this.progress, this.title, this.actions});
 
   final double progress;
-  final Widget? child;
+  final Widget? title;
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
-    final child = this.child;
-    if (child == null) {
+    if (title == null && actions == null) {
       return const SizedBox.shrink();
     }
 
     final titleScale = lerpDouble(1, 0, progress)!;
 
     return SafeArea(
-      bottom: false,
       child: SizedBox(
         height: AppGeometry.topBarHeight,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppGeometry.screenEdgePadding,
           ),
-          // TODO: currently this button also shrinks on scroll, make it so only text scales and nothing else
-          child: Transform.scale(
-            scale: titleScale,
-            alignment: Alignment.topLeft,
-            child: child,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (title != null)
+                Transform.scale(
+                  scale: titleScale,
+                  alignment: Alignment.centerLeft,
+                  child: title,
+                ),
+              if (actions != null)
+                Row(mainAxisSize: MainAxisSize.min, children: actions!),
+            ],
           ),
         ),
       ),

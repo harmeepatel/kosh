@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
 import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
 import 'package:kosh/style.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MainApp());
 }
 
@@ -17,48 +20,46 @@ class MainApp extends StatelessWidget {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
       color: Colors.black,
-      builder: (context, _) => const AppShell(
-        child: Home(title: "Home", color: Colors.blue),
-      ),
+      builder: (context, _) => const AppShell(),
     );
   }
 }
 
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.child});
+  const AppShell({super.key, this.child});
 
-  final Widget child;
+  final Widget? child;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
-class AppTabData {
-  final NavTab tab;
-  final Widget page;
-  double scrollOffset;
+enum AppTab {
+  home(label: 'Home', icon: CupertinoIcons.music_note_list, color: Colors.blue),
+  library(
+    label: 'Library',
+    icon: CupertinoIcons.square_grid_2x2,
+    color: Colors.red,
+  ),
+  search(label: 'Search', icon: CupertinoIcons.search, color: Colors.green);
 
-  AppTabData({required this.tab, required this.page, this.scrollOffset = 0.0});
+  const AppTab({required this.label, required this.icon, required this.color});
+
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  NavTab get navTab => NavTab(icon: icon, label: label);
+  Widget buildPage() => PHSongList(title: label, color: color);
 }
 
 class _AppShellState extends State<AppShell> {
-  final _scrollOffset = ValueNotifier<double>(0);
   int _selectedIndex = 0;
 
-  final List<AppTabData> _appTabs = [
-    AppTabData(
-      tab: const NavTab(icon: CupertinoIcons.music_note_list, label: 'Home'),
-      page: const Home(title: "Home", color: Colors.blue),
-    ),
-    AppTabData(
-      tab: const NavTab(icon: CupertinoIcons.square_grid_2x2, label: 'Library'),
-      page: const Home(title: "Library", color: Colors.red),
-    ),
-    AppTabData(
-      tab: const NavTab(icon: CupertinoIcons.search, label: 'Search'),
-      page: const Home(title: "Search", color: Colors.green),
-    ),
-  ];
+  final _scrollOffset = ValueNotifier<double>(0);
+  double _lastOffset = 0.0;
+  double _scrollAccumulator = 0.0;
+  final _isBottomBarVisible = ValueNotifier<bool>(true);
 
   @override
   void dispose() {
@@ -68,42 +69,78 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = _appTabs.map((data) => data.page).toList();
-    final tabs = _appTabs.map((data) => data.tab).toList();
+    late final List<Widget> pages = AppTab.values
+        .map((t) => t.buildPage())
+        .toList();
+    final tabs = AppTab.values.map((t) => t.navTab).toList();
+    final scrollOffsets = List<double>.filled(AppTab.values.length, 0.0);
+
+    onScroll(offset) {
+      final deltaSinceLastFrame = offset - _lastOffset;
+      _lastOffset = offset;
+
+      // always show bottom bar if at top
+      if (offset <= 0) {
+        _isBottomBarVisible.value = true;
+        _scrollAccumulator = 0.0;
+      } else {
+        if (deltaSinceLastFrame > 0) {
+          // Scrolling Down
+          if (_scrollAccumulator < 0) {
+            _scrollAccumulator = 0.0;
+          }
+          _scrollAccumulator += deltaSinceLastFrame;
+
+          if (_scrollAccumulator > AppTimings.scrollBuffer) {
+            _isBottomBarVisible.value = false;
+          }
+        } else if (deltaSinceLastFrame < 0) {
+          // Scrolling Up
+          if (_scrollAccumulator > 0) {
+            _scrollAccumulator = 0.0; // Reset if direction changed
+          }
+          _scrollAccumulator += deltaSinceLastFrame;
+
+          if (_scrollAccumulator < -AppTimings.scrollBuffer) {
+            _isBottomBarVisible.value = true;
+          }
+        }
+      }
+
+      scrollOffsets[_selectedIndex] = offset;
+      _scrollOffset.value = offset;
+    }
 
     return ColoredBox(
       color: Colors.black,
       child: Stack(
         children: [
           ScreenContent(
-            onScroll: (offset) {
-              _appTabs[_selectedIndex].scrollOffset = offset;
-              _scrollOffset.value = offset;
-            },
+            onScroll: onScroll,
             child: IndexedStack(index: _selectedIndex, children: pages),
           ),
 
           // renders on top
           TopBar(
             scrollOffset: _scrollOffset,
-            child: Row(
-              children: [
-                Text(
-                  _appTabs[_selectedIndex].tab.label,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            title: Text(
+              AppTab.values[_selectedIndex].label,
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
             ),
           ),
+
           BottomTabBar(
+            isVisibleNotifier: _isBottomBarVisible,
             tabs: tabs,
             selectedIndex: _selectedIndex,
             onTap: (i) => setState(() {
               _selectedIndex = i;
-              _scrollOffset.value = _appTabs[i].scrollOffset;
+              _isBottomBarVisible.value = true;
+
+              // reset
+              _lastOffset = scrollOffsets[i];
+              _scrollAccumulator = 0.0;
+              _scrollOffset.value = scrollOffsets[i];
             }),
           ),
         ],
@@ -112,8 +149,8 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class Home extends StatelessWidget {
-  const Home({super.key, required this.title, required this.color});
+class PHSongList extends StatelessWidget {
+  const PHSongList({super.key, required this.title, required this.color});
 
   final String title;
   final Color color;

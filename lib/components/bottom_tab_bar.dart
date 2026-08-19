@@ -1,9 +1,9 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/style.dart';
-
 
 class NavTab {
   const NavTab({required this.icon, required this.label});
@@ -15,6 +15,7 @@ class NavTab {
 class BottomTabBar extends StatefulWidget {
   const BottomTabBar({
     super.key,
+    required this.isVisibleNotifier,
     required this.tabs,
     required this.selectedIndex,
     required this.onTap,
@@ -22,6 +23,7 @@ class BottomTabBar extends StatefulWidget {
 
   final List<NavTab> tabs;
   final int selectedIndex;
+  final ValueListenable<bool> isVisibleNotifier;
   final ValueChanged<int> onTap;
 
   @override
@@ -31,8 +33,6 @@ class BottomTabBar extends StatefulWidget {
 class _BottomTabBarState extends State<BottomTabBar> {
   static const _tabWidth = AppGeometry.bottomNavIconSize * 2;
   static const _blobWidth = 100.0;
-
-  static const _interactionDuration = Duration(milliseconds: 80);
 
   static final _blurFilter = ImageFilter.blur(
     sigmaX: Spacing.xs2,
@@ -109,33 +109,56 @@ class _BottomTabBarState extends State<BottomTabBar> {
       left: 0,
       right: 0,
       bottom: 0,
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        minimum: EdgeInsets.only(bottom: AppGeometry.bottomPadding),
-        child: Center(child: _buildBar()),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: widget.isVisibleNotifier,
+        builder: (context, isVisible, _) {
+          return AnimatedScale(
+            scale: isVisible ? 1.0 : 0.618,
+            duration: AppTimings.md,
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.bottomCenter,
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              minimum: EdgeInsets.only(bottom: AppGeometry.bottomPadding),
+              child: Center(child: _buildBar()),
+            ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildBar() {
-    return ClipRRect(
-      clipBehavior: .antiAlias,
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: _blurFilter,
-        child: Container(
-          foregroundDecoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
-              width: 0.8,
-            ),
-            borderRadius: BorderRadius.circular(999),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 8),
           ),
-          decoration: const BoxDecoration(color: Color(0x20000000)),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [_buildInteractionBlob(), _buildTabs()],
+        ],
+      ),
+      child: ClipRRect(
+        clipBehavior: .antiAlias,
+        borderRadius: BorderRadius.circular(999),
+        child: BackdropFilter(
+          filter: _blurFilter,
+          child: Container(
+            foregroundDecoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 0.8,
+              ),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            decoration: const BoxDecoration(color: Color(0x20000000)),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [_buildInteractionBlob(), _buildTabs()],
+            ),
           ),
         ),
       ),
@@ -149,12 +172,12 @@ class _BottomTabBarState extends State<BottomTabBar> {
       left: _blobPosition,
       child: AnimatedOpacity(
         opacity: _isInteracting ? 1 : 0,
-        duration: _interactionDuration,
+        duration: AppTimings.sm,
         curve: Curves.easeInCubic,
         child: ImageFiltered(
           imageFilter: _blobBlurFilter,
           child: AnimatedContainer(
-            duration: _interactionDuration,
+            duration: AppTimings.sm,
             curve: Curves.easeInCubic,
             width: _blobWidth,
             height: _blobWidth,
@@ -170,9 +193,9 @@ class _BottomTabBarState extends State<BottomTabBar> {
 
   Widget _buildTabs() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Spacing.sm,
-        vertical: Spacing.md,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppGeometry.bottomNavPadding.x,
+        vertical: AppGeometry.bottomNavPadding.y,
       ),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -212,7 +235,7 @@ class _TabItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       tab.icon,
-      color: selected ? Colors.red.shade400 : const Color(0xffbcbcbc),
+      color: selected ? Colors.red.shade600 : const Color(0xffbcbcbc),
       size: AppGeometry.bottomNavIconSize,
     );
   }
