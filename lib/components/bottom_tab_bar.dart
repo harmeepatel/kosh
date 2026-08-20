@@ -38,27 +38,34 @@ class _BottomTabBarState extends State<BottomTabBar> {
     sigmaX: AppBlur.bottomNavBlur,
     sigmaY: AppBlur.bottomNavBlur,
   );
-
   static final _blobBlurFilter = ImageFilter.blur(sigmaX: 32, sigmaY: 32);
 
   int? _previewIndex;
-  double _blobPosition = 0;
-  bool _isInteracting = false;
+
+  final ValueNotifier<double> _blobPosition = ValueNotifier(0.0);
+  final ValueNotifier<bool> _isInteracting = ValueNotifier(false);
+
+  @override
+  void dispose() {
+    _blobPosition.dispose();
+    _isInteracting.dispose();
+    super.dispose();
+  }
 
   int get _activeIndex => _previewIndex ?? widget.selectedIndex;
 
+  double _calculateBlobDx(double localDx) {
+    return localDx + Spacing.xs - (_blobWidth / 2);
+  }
+
   void _updateInteraction(Offset localPosition) {
     final index = _indexForPosition(localPosition.dx);
-    final blobLeftEdge = localPosition.dx + Spacing.xs - (_blobWidth / 2);
 
-    setState(() {
-      _isInteracting = true;
-      _blobPosition = blobLeftEdge;
-    });
+    _isInteracting.value = true;
+    _blobPosition.value = _calculateBlobDx(localPosition.dx);
 
     if (_previewIndex != index) {
       HapticFeedback.lightImpact();
-
       setState(() {
         _previewIndex = index;
       });
@@ -67,8 +74,8 @@ class _BottomTabBarState extends State<BottomTabBar> {
 
   void _startInteraction(Offset localPosition) {
     setState(() {
-      _isInteracting = true;
-      _blobPosition = localPosition.dx + Spacing.xs - (_blobWidth / 2);
+      _isInteracting.value = true;
+      _blobPosition.value = _calculateBlobDx(localPosition.dx);
     });
   }
 
@@ -79,22 +86,16 @@ class _BottomTabBarState extends State<BottomTabBar> {
 
   void _commitInteraction() {
     final index = _previewIndex;
-
     if (index != null) {
       widget.onTap(index);
     }
-
-    _endInteraction();
-  }
-
-  void _cancelInteraction() {
     _endInteraction();
   }
 
   void _endInteraction() {
     setState(() {
       _previewIndex = null;
-      _isInteracting = false;
+      _isInteracting.value = false;
     });
   }
 
@@ -103,112 +104,161 @@ class _BottomTabBarState extends State<BottomTabBar> {
     _commitInteraction();
   }
 
+  void _expandNav() {
+    if (widget.isVisibleNotifier is ValueNotifier<bool>) {
+      (widget.isVisibleNotifier as ValueNotifier<bool>).value = true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: ValueListenableBuilder<bool>(
-        valueListenable: widget.isVisibleNotifier,
-        builder: (context, isVisible, _) {
-          return AnimatedScale(
-            scale: isVisible ? 1.0 : 0.2,
-            duration: AppTiming.md,
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              top: false,
-              bottom: false,
-              minimum: EdgeInsets.only(bottom: AppGeometry.bottomPadding),
-              child: Center(child: _buildBar()),
-            ),
-          );
-        },
-      ),
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final navHeight = AppInset.navBarHeight();
+    final collapsedWidth =
+        navHeight; // Perfectly square/circle matching nav height
+    final expandedWidth =
+        (widget.tabs.length * _tabWidth) + (AppGeometry.bottomNavPadding * 2);
+
+    final expandedLeft = (screenWidth - expandedWidth) / 2;
+    final collapsedLeft = AppInset.screenEdgePadding;
+    final bottomMargin = AppInset.bottomMargin(context);
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.isVisibleNotifier,
+      builder: (context, isVisible, _) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: isVisible ? 1.0 : 0.0),
+          duration: AppTiming.md,
+          curve: Curves.easeOutCubic,
+          builder: (context, progress, _) {
+            final currentWidth = lerpDouble(
+              collapsedWidth,
+              expandedWidth,
+              progress,
+            )!;
+            final currentLeft = lerpDouble(
+              collapsedLeft,
+              expandedLeft,
+              progress,
+            )!;
+
+            return Positioned(
+              left: currentLeft,
+              bottom: bottomMargin,
+              width: currentWidth,
+              height: navHeight,
+              child: GestureDetector(
+                onTap: isVisible ? null : _expandNav,
+                child: ClipRRect(
+                  clipBehavior: Clip.antiAlias,
+                  borderRadius: BorderRadius.circular(navHeight / 2),
+                  child: BackdropFilter(
+                    filter: _blurFilter,
+                    child: Container(
+                      foregroundDecoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 0.8,
+                        ),
+                        borderRadius: BorderRadius.circular(navHeight / 2),
+                      ),
+                      decoration: const BoxDecoration(color: Color(0x20000000)),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Opacity(
+                            opacity: (1 - progress * 2).clamp(0.0, 1.0),
+                            child: _TabItem(
+                              tab: widget.tabs[_activeIndex],
+                              selected: true,
+                            ),
+                          ),
+                          Opacity(
+                            opacity: ((progress - 0.5) * 2).clamp(0.0, 1.0),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              physics: const NeverScrollableScrollPhysics(),
+                              child: SizedBox(
+                                width: expandedWidth,
+                                height: navHeight,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    _buildInteractionBlob(),
+                                    _buildTabs(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildBar() {
-    return ClipRRect(
-      clipBehavior: .antiAlias,
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: _blurFilter,
-        child: Container(
-          foregroundDecoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
-              width: 0.8,
+  Widget _buildTabs() {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: (details) =>
+          _updateInteraction(details.localPosition),
+      onHorizontalDragUpdate: (details) =>
+          _updateInteraction(details.localPosition),
+      onHorizontalDragEnd: (_) => _commitInteraction(),
+      onHorizontalDragCancel: _endInteraction,
+      onTapDown: (details) => _startInteraction(details.localPosition),
+      onTapUp: _handleTapUp,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < widget.tabs.length; i++)
+            SizedBox(
+              width: _tabWidth,
+              child: _TabItem(tab: widget.tabs[i], selected: i == _activeIndex),
             ),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          decoration: const BoxDecoration(color: Color(0x20000000)),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [_buildInteractionBlob(), _buildTabs()],
-          ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildInteractionBlob() {
-    return Positioned(
-      top: 0,
-      bottom: 0,
-      left: _blobPosition,
-      child: AnimatedOpacity(
-        opacity: _isInteracting ? 1 : 0,
-        duration: AppTiming.sm,
-        curve: Curves.easeInCubic,
-        child: ImageFiltered(
-          imageFilter: _blobBlurFilter,
-          child: AnimatedContainer(
-            duration: AppTiming.sm,
-            curve: Curves.easeInCubic,
-            width: _blobWidth,
-            height: _blobWidth,
-            decoration: const BoxDecoration(
-              color: Colors.white24,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabs() {
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppGeometry.bottomNavPadding,
-        vertical: AppGeometry.bottomNavPadding,
-      ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onHorizontalDragStart: (details) =>
-            _updateInteraction(details.localPosition),
-        onHorizontalDragUpdate: (details) =>
-            _updateInteraction(details.localPosition),
-        onHorizontalDragEnd: (_) => _commitInteraction(),
-        onHorizontalDragCancel: _cancelInteraction,
-        onTapDown: (details) => _startInteraction(details.localPosition),
-        onTapUp: _handleTapUp,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < widget.tabs.length; i++)
-              SizedBox(
-                width: _tabWidth,
-                child: _TabItem(
-                  tab: widget.tabs[i],
-                  selected: i == _activeIndex,
+    return ValueListenableBuilder<double>(
+      valueListenable: _blobPosition,
+      builder: (context, position, child) {
+        return Positioned(
+          top: 0,
+          bottom: 0,
+          left: position,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _isInteracting,
+            builder: (context, interacting, _) {
+              return AnimatedOpacity(
+                opacity: interacting ? 1 : 0,
+                duration: AppTiming.sm,
+                curve: Curves.easeInCubic,
+                child: ImageFiltered(
+                  imageFilter: _blobBlurFilter,
+                  child: Container(
+                    width: _blobWidth,
+                    height: _blobWidth,
+                    decoration: const BoxDecoration(
+                      color: Colors.white24,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                 ),
-              ),
-          ],
-        ),
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

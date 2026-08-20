@@ -59,7 +59,6 @@ class _BlurLayer extends StatelessWidget {
   }
 }
 
-// Define specific parameters for the title and optional actions
 class _TopBarContent extends StatelessWidget {
   const _TopBarContent({required this.progress, this.title, this.actions});
 

@@ -24,7 +24,12 @@ class _PlayerDockState extends State<PlayerDock>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: AppTiming.lg,
-    value: widget.isOpenNotifier.value ? 1 : 0,
+    value: widget.isOpenNotifier.value ? 1.0 : 0.0,
+  );
+
+  static final _blurFilter = ImageFilter.blur(
+    sigmaX: AppBlur.bottomNavBlur,
+    sigmaY: AppBlur.bottomNavBlur,
   );
 
   @override
@@ -67,25 +72,41 @@ class _PlayerDockState extends State<PlayerDock>
 
   void _onDragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
-    // Physics constant for flick detection, kept hardcoded
-    final open =
-        velocity < -300 || (velocity <= 300 && _controller.value >= 0.5);
-    _controller.animateTo(open ? 1.0 : 0.0, curve: Curves.easeOutBack);
-    widget.isOpenNotifier.value = open;
+    final isFlickUp = velocity < -300;
+    final isPastThreshold = velocity <= 300 && _controller.value >= 0.5;
+    final shouldOpen = isFlickUp || isPastThreshold;
+
+    _controller.animateTo(shouldOpen ? 1.0 : 0.0, curve: Curves.easeOutBack);
+    widget.isOpenNotifier.value = shouldOpen;
   }
 
-  Rect _pillRect(Size screen, bool navVisible) {
-    // Standardized spacing and insets
-    final bottom = navVisible
-        ? AppInset.bottomNavHeight + Spacing.xs
-        : AppGeometry.bottomPadding;
+  Rect _pillRect(
+    Size screen,
+    double actualNavHeight,
+    double navProgress,
+    double bottomMargin,
+  ) {
+    final navHeight = AppInset.navBarHeight();
+    final gap = Spacing.md;
+    final collapsedNavWidth = navHeight;
 
-    return Rect.fromLTRB(
-      AppGeometry.bottomPadding,
-      screen.height - bottom - AppGeometry.miniPlayerHeight,
-      screen.width - AppGeometry.bottomPadding,
-      screen.height - bottom,
+    // Side-by-side position (nav collapsed)
+    final collapsedRect = Rect.fromLTWH(
+      AppInset.screenEdgePadding + collapsedNavWidth + gap,
+      screen.height - bottomMargin - navHeight,
+      screen.width - (AppInset.screenEdgePadding * 2) - collapsedNavWidth - gap,
+      navHeight,
     );
+
+    // Stacked position (nav expanded)
+    final expandedRect = Rect.fromLTWH(
+      AppInset.screenEdgePadding,
+      screen.height - actualNavHeight - navHeight - gap,
+      screen.width - (AppInset.screenEdgePadding * 2),
+      navHeight,
+    );
+
+    return Rect.lerp(collapsedRect, expandedRect, navProgress)!;
   }
 
   Rect _sheetRect(Size screen) =>
@@ -94,46 +115,44 @@ class _PlayerDockState extends State<PlayerDock>
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
+    final actualNavHeight = AppInset.bottomNavHeightWithPad(context);
+    final bottomMargin = AppInset.bottomMargin(context);
 
     return ValueListenableBuilder<bool>(
       valueListenable: widget.isBottomBarVisibleNotifier,
       builder: (context, navVisible, _) {
-        return AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final t = _controller.value;
-            final pill = _pillRect(screen, navVisible);
-            final sheet = _sheetRect(screen);
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: navVisible ? 1.0 : 0.0),
+          duration: AppTiming.md,
+          curve: Curves.easeOutCubic,
+          builder: (context, navProgress, _) {
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                final t = _controller.value;
+                final pill = _pillRect(
+                  screen,
+                  actualNavHeight,
+                  navProgress,
+                  bottomMargin,
+                );
+                final sheet = _sheetRect(screen);
 
-            final movingRect = Rect.lerp(pill, sheet, t)!;
-            final startRadius = pill.height / 2;
+                final movingRect = Rect.lerp(pill, sheet, t)!;
+                final startRadius = pill.height / 2;
+                final radius = lerpDouble(
+                  startRadius,
+                  AppGeometry.deviceCornerRadius,
+                  t,
+                )!;
 
-            // Standardized device corner radius
-            final radius = lerpDouble(
-              startRadius,
-              AppGeometry.deviceCornerRadius,
-              t,
-            )!;
+                final pillContentOpacity = (1 - t * 8).clamp(0.0, 1.0);
+                final sheetContentOpacity = t.clamp(0.0, 1.0);
 
-            // Animation timing constants (0.3, 0.7 thresholds) kept hardcoded
-            final pillContentOpacity = (1 - t * 3).clamp(0.0, 1.0);
-            final sheetContentOpacity = ((t - 0.7) / 0.3).clamp(0.0, 1.0);
+                // Fade out border as it opens to full screen
+                final borderAlpha = lerpDouble(0.25, 0.0, t)!;
 
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _GooeyPainter(
-                        pillRect: pill,
-                        movingRect: movingRect,
-                        startRadius: startRadius,
-                        radius: radius,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned.fromRect(
+                return Positioned.fromRect(
                   rect: movingRect,
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
@@ -141,120 +160,69 @@ class _PlayerDockState extends State<PlayerDock>
                     onVerticalDragStart: _onDragStart,
                     onVerticalDragUpdate: _onDragUpdate,
                     onVerticalDragEnd: _onDragEnd,
-                    child: Stack(
-                      children: [
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: SizedBox(
-                            height: pill.height,
-                            child: Opacity(
-                              opacity: pillContentOpacity,
-                              child: IgnorePointer(
-                                ignoring: t > 0.3,
-                                child: const MiniPlayerContent(),
+                    child: ClipRRect(
+                      clipBehavior: Clip.antiAlias,
+                      borderRadius: BorderRadius.circular(radius),
+                      child: BackdropFilter(
+                        filter: _blurFilter,
+                        child: Container(
+                          foregroundDecoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.white.withValues(
+                                alpha: borderAlpha,
                               ),
+                              width: 0.8,
                             ),
+                            borderRadius: BorderRadius.circular(radius),
+                          ),
+                          decoration: const BoxDecoration(
+                            color: Color(0x20000000),
+                          ),
+                          child: Stack(
+                            children: [
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: SizedBox(
+                                  height: pill.height,
+                                  child: Opacity(
+                                    opacity: pillContentOpacity,
+                                    child: IgnorePointer(
+                                      ignoring: t > 0.3,
+                                      child: const MiniPlayerContent(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Opacity(
+                                opacity: sheetContentOpacity,
+                                child: IgnorePointer(
+                                  ignoring: t < 0.7,
+                                  child: OverflowBox(
+                                    alignment: Alignment.topLeft,
+                                    minWidth: 0,
+                                    maxWidth: double.infinity,
+                                    minHeight: 0,
+                                    maxHeight: double.infinity,
+                                    child: SizedBox(
+                                      width: screen.width,
+                                      height: screen.height,
+                                      child: const MusicPlayerPlaceholder(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Opacity(
-                          opacity: sheetContentOpacity,
-                          child: IgnorePointer(
-                            ignoring: t < 0.7,
-                            child: OverflowBox(
-                              alignment: Alignment.topLeft,
-                              minWidth: 0,
-                              maxWidth: double.infinity,
-                              minHeight: 0,
-                              maxHeight: double.infinity,
-                              child: SizedBox(
-                                width: screen.width,
-                                height: screen.height,
-                                child: const MusicPlayerPlaceholder(),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             );
           },
         );
       },
     );
-  }
-}
-
-class _GooeyPainter extends CustomPainter {
-  _GooeyPainter({
-    required this.pillRect,
-    required this.movingRect,
-    required this.startRadius,
-    required this.radius,
-  });
-
-  final Rect pillRect;
-  final Rect movingRect;
-  final double startRadius;
-  final double radius;
-
-  // Mathematically coupled gooey constants (Do not replace with Spacing variables)
-  static final Paint _filterPaint = Paint()
-    ..colorFilter = const ColorFilter.matrix(<double>[
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      0,
-      20,
-      -2400,
-    ]);
-
-  static final Paint _blurPaint = Paint()
-    ..color = const Color(0xFF1C1C1E)
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Standardized buffer expansion using deviceCornerRadius instead of hardcoded 50
-    final layerBounds = pillRect
-        .expandToInclude(movingRect)
-        .inflate(AppGeometry.deviceCornerRadius);
-
-    canvas.saveLayer(layerBounds, _filterPaint);
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(pillRect, Radius.circular(startRadius)),
-      _blurPaint,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(movingRect, Radius.circular(radius)),
-      _blurPaint,
-    );
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _GooeyPainter oldDelegate) {
-    return pillRect != oldDelegate.pillRect ||
-        movingRect != oldDelegate.movingRect ||
-        radius != oldDelegate.radius;
   }
 }

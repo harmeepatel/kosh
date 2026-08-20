@@ -20,264 +20,16 @@ class MusicPlayerPlaceholder extends StatelessWidget {
       backgroundColor: const Color(0xff453c3c),
       body: Stack(
         children: [
-          // Blurred album art background.
-          if (albumArt != null)
-            Positioned.fill(
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-                child: Image(image: albumArt!, fit: BoxFit.cover),
-              ),
-            ),
-
-          // Dark overlay.
-          Positioned.fill(
-            child: ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
-          ),
-
+          _BackgroundBlur(albumArt: albumArt),
           SafeArea(
             child: Column(
               children: [
-                // const SizedBox(height: 55),
-
-                // Album artwork.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 38),
-                  child: AspectRatio(
-                    aspectRatio: 1,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: albumArt != null
-                          ? Image(image: albumArt!, fit: BoxFit.cover)
-                          : const _AlbumPlaceholder(),
-                    ),
-                  ),
-                ),
-
-                // const Spacer(),
-
-                // Song information.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 27,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              artist,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.65),
-                                fontSize: 22,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.star_border_rounded,
-                          color: Colors.white,
-                          size: 36,
-                        ),
-                      ),
-
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.more_horiz_rounded,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // const SizedBox(height: 32),
-
-                // Progress.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    children: [
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          trackHeight: 7,
-                          thumbShape: SliderComponentShape.noThumb,
-                          overlayShape: SliderComponentShape.noOverlay,
-                          activeTrackColor: Colors.white70,
-                          inactiveTrackColor: Colors.white24,
-                        ),
-                        child: Slider(value: 0.23, onChanged: (_) {}),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('0:58', style: _secondaryText),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 13,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.graphic_eq_rounded,
-                                    color: Colors.white70,
-                                    size: 19,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Lossless',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text('-3:23', style: _secondaryText),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // const SizedBox(height: 55),
-
-                // Playback controls.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      iconSize: 46,
-                      icon: const Icon(
-                        Icons.skip_previous_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    const SizedBox(width: 65),
-
-                    IconButton(
-                      onPressed: () {},
-                      iconSize: 76,
-                      icon: const Icon(
-                        Icons.play_arrow_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-
-                    // const SizedBox(width: 65),
-
-                    IconButton(
-                      onPressed: () {},
-                      iconSize: 46,
-                      icon: const Icon(
-                        Icons.skip_next_rounded,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // const SizedBox(height: 55),
-
-                // Volume.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.volume_mute_rounded,
-                        color: Colors.white70,
-                        size: 25,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            trackHeight: 7,
-                            thumbShape: SliderComponentShape.noThumb,
-                            overlayShape: SliderComponentShape.noOverlay,
-                            activeTrackColor: Colors.white70,
-                            inactiveTrackColor: Colors.white24,
-                          ),
-                          child: Slider(value: 0.58, onChanged: (_) {}),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Icon(
-                        Icons.volume_up_rounded,
-                        color: Colors.white70,
-                        size: 27,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // const SizedBox(height: 35),
-
-                // Bottom actions.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        color: Colors.white70,
-                        size: 31,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.headphones_rounded,
-                        color: Colors.white70,
-                        size: 32,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.queue_music_rounded,
-                        color: Colors.white70,
-                        size: 32,
-                      ),
-                    ),
-                  ],
-                ),
-
-                // const SizedBox(height: 12),
-
+                _AlbumArtCover(albumArt: albumArt),
+                _SongDetails(title: title, artist: artist),
+                const _PlaybackProgress(),
+                const _PlaybackControls(),
+                const _VolumeControls(),
+                const _BottomActions(),
                 Text(
                   "HP's APP 3",
                   style: TextStyle(
@@ -286,8 +38,6 @@ class MusicPlayerPlaceholder extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
-                // const SizedBox(height: 18),
               ],
             ),
           ),
@@ -295,12 +45,278 @@ class MusicPlayerPlaceholder extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BackgroundBlur extends StatelessWidget {
+  const _BackgroundBlur({this.albumArt});
+  final ImageProvider? albumArt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        if (albumArt != null)
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+            child: Image(image: albumArt!, fit: BoxFit.cover),
+          ),
+        ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
+      ],
+    );
+  }
+}
+
+class _AlbumArtCover extends StatelessWidget {
+  const _AlbumArtCover({this.albumArt});
+  final ImageProvider? albumArt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 38),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: albumArt != null
+              ? Image(image: albumArt!, fit: BoxFit.cover)
+              : const _AlbumPlaceholder(),
+        ),
+      ),
+    );
+  }
+}
+
+class _SongDetails extends StatelessWidget {
+  const _SongDetails({required this.title, required this.artist});
+  final String title;
+  final String artist;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  artist,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.65),
+                    fontSize: 22,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.star_border_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.more_horiz_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaybackProgress extends StatelessWidget {
+  const _PlaybackProgress();
 
   static const _secondaryText = TextStyle(
     color: Colors.white54,
     fontSize: 17,
     fontWeight: FontWeight.w500,
   );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Column(
+        children: [
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 7,
+              thumbShape: SliderComponentShape.noThumb,
+              overlayShape: SliderComponentShape.noOverlay,
+              activeTrackColor: Colors.white70,
+              inactiveTrackColor: Colors.white24,
+            ),
+            child: Slider(value: 0.23, onChanged: (_) {}),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('0:58', style: _secondaryText),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.graphic_eq_rounded,
+                        color: Colors.white70,
+                        size: 19,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Lossless',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Text('-3:23', style: _secondaryText),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaybackControls extends StatelessWidget {
+  const _PlaybackControls();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          onPressed: () {},
+          iconSize: 46,
+          icon: const Icon(Icons.skip_previous_rounded, color: Colors.white),
+        ),
+        const SizedBox(width: 65),
+        IconButton(
+          onPressed: () {},
+          iconSize: 76,
+          icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+        ),
+        const SizedBox(width: 65),
+        IconButton(
+          onPressed: () {},
+          iconSize: 46,
+          icon: const Icon(Icons.skip_next_rounded, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+
+class _VolumeControls extends StatelessWidget {
+  const _VolumeControls();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.volume_mute_rounded,
+            color: Colors.white70,
+            size: 25,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 7,
+                thumbShape: SliderComponentShape.noThumb,
+                overlayShape: SliderComponentShape.noOverlay,
+                activeTrackColor: Colors.white70,
+                inactiveTrackColor: Colors.white24,
+              ),
+              child: Slider(value: 0.58, onChanged: (_) {}),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.volume_up_rounded, color: Colors.white70, size: 27),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomActions extends StatelessWidget {
+  const _BottomActions();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.chat_bubble_outline_rounded,
+            color: Colors.white70,
+            size: 31,
+          ),
+        ),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.headphones_rounded,
+            color: Colors.white70,
+            size: 32,
+          ),
+        ),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(
+            Icons.queue_music_rounded,
+            color: Colors.white70,
+            size: 32,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _AlbumPlaceholder extends StatelessWidget {

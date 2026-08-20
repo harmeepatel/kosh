@@ -2,8 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
-import 'package:kosh/components/mini_player.dart';
-import 'package:kosh/components/player_sheet.dart';
+import 'package:kosh/components/player_dock.dart';
 import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
 import 'package:kosh/style.dart';
@@ -21,21 +20,13 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
+      // showPerformanceOverlay: true,
       color: Colors.black,
       builder: (context, _) => Overlay(
         initialEntries: [OverlayEntry(builder: (context) => const AppShell())],
       ),
     );
   }
-}
-
-class AppShell extends StatefulWidget {
-  const AppShell({super.key, this.child});
-
-  final Widget? child;
-
-  @override
-  State<AppShell> createState() => _AppShellState();
 }
 
 enum AppTab {
@@ -47,14 +38,23 @@ enum AppTab {
   ),
   search(label: 'Search', icon: CupertinoIcons.search, color: Colors.green);
 
-  const AppTab({required this.label, required this.icon, required this.color});
+  final dynamic label;
+  final dynamic icon;
+  final dynamic color;
 
-  final String label;
-  final IconData icon;
-  final Color color;
+  const AppTab({required this.label, required this.icon, required this.color});
 
   NavTab get navTab => NavTab(icon: icon, label: label);
   Widget buildPage() => PHSongList(title: label, color: color);
+}
+
+class AppShell extends StatefulWidget {
+  const AppShell({super.key, this.child});
+
+  final Widget? child;
+
+  @override
+  State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
@@ -66,6 +66,16 @@ class _AppShellState extends State<AppShell> {
   final _isBottomBarVisible = ValueNotifier<bool>(true);
   final _isPlayerSheetOpen = ValueNotifier<bool>(false);
 
+  final scrollOffsets = List<double>.filled(AppTab.values.length, 0.0);
+
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = AppTab.values.map((t) => t.buildPage()).toList();
+  }
+
   @override
   void dispose() {
     _scrollOffset.dispose();
@@ -74,60 +84,57 @@ class _AppShellState extends State<AppShell> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    late final List<Widget> pages = AppTab.values
-        .map((t) => t.buildPage())
-        .toList();
-    final tabs = AppTab.values.map((t) => t.navTab).toList();
-    final scrollOffsets = List<double>.filled(AppTab.values.length, 0.0);
+  void _handleScroll(double offset) {
+    final deltaSinceLastFrame = offset - _lastOffset;
+    _lastOffset = offset;
 
-    onScroll(offset) {
-      final deltaSinceLastFrame = offset - _lastOffset;
-      _lastOffset = offset;
+    if (offset <= 0) {
+      _isBottomBarVisible.value = true;
+      _scrollAccumulator = 0.0;
+    } else {
+      if (deltaSinceLastFrame > 0) {
+        if (_scrollAccumulator < 0) _scrollAccumulator = 0.0;
+        _scrollAccumulator += deltaSinceLastFrame;
 
-      // always show bottom bar if at top
-      if (offset <= 0) {
-        _isBottomBarVisible.value = true;
-        _scrollAccumulator = 0.0;
-      } else {
-        if (deltaSinceLastFrame > 0) {
-          // Scrolling Down
-          if (_scrollAccumulator < 0) {
-            _scrollAccumulator = 0.0;
-          }
-          _scrollAccumulator += deltaSinceLastFrame;
+        if (_scrollAccumulator > AppTiming.scrollBuffer) {
+          _isBottomBarVisible.value = false;
+        }
+      } else if (deltaSinceLastFrame < 0) {
+        if (_scrollAccumulator > 0) _scrollAccumulator = 0.0;
+        _scrollAccumulator += deltaSinceLastFrame;
 
-          if (_scrollAccumulator > AppTiming.scrollBuffer) {
-            _isBottomBarVisible.value = false;
-          }
-        } else if (deltaSinceLastFrame < 0) {
-          // Scrolling Up
-          if (_scrollAccumulator > 0) {
-            _scrollAccumulator = 0.0; // Reset if direction changed
-          }
-          _scrollAccumulator += deltaSinceLastFrame;
-
-          if (_scrollAccumulator < -AppTiming.scrollBuffer) {
-            _isBottomBarVisible.value = true;
-          }
+        if (_scrollAccumulator < -AppTiming.scrollBuffer) {
+          _isBottomBarVisible.value = true;
         }
       }
-
-      scrollOffsets[_selectedIndex] = offset;
-      _scrollOffset.value = offset;
     }
+
+    scrollOffsets[_selectedIndex] = offset;
+    _scrollOffset.value = offset;
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _isBottomBarVisible.value = true;
+      _lastOffset = scrollOffsets[index];
+      _scrollAccumulator = 0.0;
+      _scrollOffset.value = scrollOffsets[index];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = AppTab.values.map((t) => t.navTab).toList();
 
     return ColoredBox(
       color: Colors.black,
       child: Stack(
         children: [
           ScreenContent(
-            onScroll: onScroll,
-            child: IndexedStack(index: _selectedIndex, children: pages),
+            onScroll: _handleScroll,
+            child: IndexedStack(index: _selectedIndex, children: _pages),
           ),
-
-          // renders on top
           TopBar(
             scrollOffset: _scrollOffset,
             title: Text(
@@ -135,40 +142,16 @@ class _AppShellState extends State<AppShell> {
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
             ),
           ),
-
-          ValueListenableBuilder<bool>(
-            valueListenable: _isBottomBarVisible,
-            builder: (context, isVisible, _) {
-              return AnimatedPositioned(
-                duration: AppTiming.md,
-                curve: Curves.easeOutCubic,
-                left: 0,
-                right: 0,
-                // 1. Slide down when the bottom bar hides
-                bottom: isVisible
-                    ? AppInset.bottomNavHeight + Spacing.xs
-                    : AppGeometry.bottomPadding,
-                child: MiniPlayer(onTap: () => _isPlayerSheetOpen.value = true),
-              );
-            },
-          ),
-
           BottomTabBar(
             isVisibleNotifier: _isBottomBarVisible,
             tabs: tabs,
             selectedIndex: _selectedIndex,
-            onTap: (i) => setState(() {
-              _selectedIndex = i;
-              _isBottomBarVisible.value = true;
-
-              // reset
-              _lastOffset = scrollOffsets[i];
-              _scrollAccumulator = 0.0;
-              _scrollOffset.value = scrollOffsets[i];
-            }),
+            onTap: _onTabTapped,
           ),
-
-          PlayerSheet(isOpenNotifier: _isPlayerSheetOpen),
+          PlayerDock(
+            isOpenNotifier: _isPlayerSheetOpen,
+            isBottomBarVisibleNotifier: _isBottomBarVisible,
+          ),
         ],
       ),
     );
@@ -186,7 +169,7 @@ class PHSongList extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.only(
         top: AppInset.topBarHeight(context),
-        bottom: AppInset.bottomNavHeight,
+        bottom: AppInset.bottomNavHeightWithPad(context),
       ),
       itemCount: 32,
       separatorBuilder: (context, index) => Container(
@@ -197,9 +180,7 @@ class PHSongList extends StatelessWidget {
       itemBuilder: (context, i) {
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () {
-            // Handle song tap
-          },
+          onTap: () {},
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppInset.screenEdgePadding,
@@ -207,7 +188,6 @@ class PHSongList extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Album Art Placeholder
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: Container(
@@ -219,8 +199,6 @@ class PHSongList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                // Song Title & Artist
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,8 +223,6 @@ class PHSongList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                // More Options Icon
                 const Icon(Icons.more_horiz, color: Colors.grey),
               ],
             ),
