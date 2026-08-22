@@ -51,10 +51,10 @@ class _BlurLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sigma = Spacing.md * progress;
+    final sigma =  AppBlur.lg * progress;
 
     return Inspire.backdropBlur(
-      config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.2),
+      config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.1),
     );
   }
 }

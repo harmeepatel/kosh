@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:kosh/style.dart';
 
 class MusicPlayerPlaceholder extends StatelessWidget {
   const MusicPlayerPlaceholder({
@@ -17,13 +16,25 @@ class MusicPlayerPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff453c3c),
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          _BackgroundBlur(albumArt: albumArt),
           SafeArea(
             child: Column(
               children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.top * 1.5,
+                  ),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.2,
+                    height: AppGeometry.borderWidth * 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white30,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
                 _AlbumArtCover(albumArt: albumArt),
                 _SongDetails(title: title, artist: artist),
                 const _PlaybackProgress(),
@@ -47,26 +58,6 @@ class MusicPlayerPlaceholder extends StatelessWidget {
   }
 }
 
-class _BackgroundBlur extends StatelessWidget {
-  const _BackgroundBlur({this.albumArt});
-  final ImageProvider? albumArt;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (albumArt != null)
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
-            child: Image(image: albumArt!, fit: BoxFit.cover),
-          ),
-        ColoredBox(color: Colors.black.withValues(alpha: 0.48)),
-      ],
-    );
-  }
-}
-
 class _AlbumArtCover extends StatelessWidget {
   const _AlbumArtCover({this.albumArt});
   final ImageProvider? albumArt;
@@ -78,7 +69,7 @@ class _AlbumArtCover extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: 1,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.lg),
           child: albumArt != null
               ? Image(image: albumArt!, fit: BoxFit.cover)
               : const _AlbumPlaceholder(),
@@ -185,7 +176,7 @@ class _PlaybackProgress extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadii.md),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

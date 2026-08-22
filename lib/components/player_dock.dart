@@ -5,6 +5,8 @@ import 'package:kosh/components/mini_player_content.dart';
 import 'package:kosh/components/music_player_placeholder.dart';
 import 'package:kosh/style.dart';
 
+import 'frosted_glass.dart';
+
 class PlayerDock extends StatefulWidget {
   const PlayerDock({
     super.key,
@@ -27,10 +29,7 @@ class _PlayerDockState extends State<PlayerDock>
     value: widget.isOpenNotifier.value ? 1.0 : 0.0,
   );
 
-  static final _blurFilter = ImageFilter.blur(
-    sigmaX: AppBlur.bottomNavBlur,
-    sigmaY: AppBlur.bottomNavBlur,
-  );
+  final double _draggableDistance = 0.7; // Stops sliding straight at 70%
 
   @override
   void initState() {
@@ -49,22 +48,28 @@ class _PlayerDockState extends State<PlayerDock>
     if (_controller.isAnimating) return;
     _controller.animateTo(
       widget.isOpenNotifier.value ? 1.0 : 0.0,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutCubic,
     );
   }
 
   void _onTap() {
     if (_controller.value != 0) return;
-    _controller.animateTo(1.0, curve: Curves.easeOutBack);
     widget.isOpenNotifier.value = true;
+    _controller.animateTo(1.0, curve: Curves.easeOutCubic);
   }
 
-  void _onDragStart(DragStartDetails details) => _controller.stop();
+  void _onDragStart(DragStartDetails details) {
+    _controller.stop();
+  }
 
   void _onDragUpdate(DragUpdateDetails details) {
     final screenHeight = MediaQuery.sizeOf(context).height;
     final delta = details.primaryDelta ?? 0;
-    _controller.value = (_controller.value - delta / screenHeight).clamp(
+
+    // The total draggable distance is now 70% of the screen height
+    final travelDistance = screenHeight * _draggableDistance;
+
+    _controller.value = (_controller.value - delta / travelDistance).clamp(
       0.0,
       1.0,
     );
@@ -76,21 +81,20 @@ class _PlayerDockState extends State<PlayerDock>
     final isPastThreshold = velocity <= 300 && _controller.value >= 0.5;
     final shouldOpen = isFlickUp || isPastThreshold;
 
-    _controller.animateTo(shouldOpen ? 1.0 : 0.0, curve: Curves.easeOutBack);
     widget.isOpenNotifier.value = shouldOpen;
+    _controller.animateTo(shouldOpen ? 1.0 : 0.0, curve: Curves.easeOutCubic);
   }
 
-  Rect _pillRect(
+  Rect _getPillRect(
     Size screen,
     double actualNavHeight,
     double navProgress,
     double bottomMargin,
   ) {
     final navHeight = AppInset.navBarHeight();
-    final gap = Spacing.md;
+    final gap = AppInset.screenEdgePadding;
     final collapsedNavWidth = navHeight;
 
-    // Side-by-side position (nav collapsed)
     final collapsedRect = Rect.fromLTWH(
       AppInset.screenEdgePadding + collapsedNavWidth + gap,
       screen.height - bottomMargin - navHeight,
@@ -98,7 +102,6 @@ class _PlayerDockState extends State<PlayerDock>
       navHeight,
     );
 
-    // Stacked position (nav expanded)
     final expandedRect = Rect.fromLTWH(
       AppInset.screenEdgePadding,
       screen.height - actualNavHeight - navHeight - gap,
@@ -109,8 +112,47 @@ class _PlayerDockState extends State<PlayerDock>
     return Rect.lerp(collapsedRect, expandedRect, navProgress)!;
   }
 
-  Rect _sheetRect(Size screen) =>
-      Rect.fromLTWH(0, 0, screen.width, screen.height);
+  _DockLayout _calculateLayout({
+    required double t,
+    required Rect pill,
+    required Size screen,
+  }) {
+    final sheetRadius = AppGeometry.deviceCornerRadius;
+    final pillRadius = pill.height / 2;
+
+    const morphThreshold = 0.3;
+
+    if (t >= morphThreshold) {
+      final slideProgress = (t - morphThreshold) / (1.0 - morphThreshold);
+      final maxOffset = screen.height * _draggableDistance;
+      final topOffset = (1.0 - slideProgress) * maxOffset;
+
+      return _DockLayout(
+        rect: Rect.fromLTWH(0, topOffset, screen.width, screen.height),
+        radius: sheetRadius,
+        pillOpacity: 0.0,
+        sheetOpacity: 1.0,
+        borderAlpha: 0.0,
+      );
+    } else {
+      final morphProgress = t / morphThreshold;
+
+      final slideEndRect = Rect.fromLTWH(
+        0,
+        screen.height * _draggableDistance,
+        screen.width,
+        screen.height,
+      );
+
+      return _DockLayout(
+        rect: Rect.lerp(pill, slideEndRect, morphProgress)!,
+        radius: lerpDouble(pillRadius, sheetRadius, morphProgress)!,
+        pillOpacity: (1.0 - morphProgress).clamp(0.0, 1.0),
+        sheetOpacity: morphProgress.clamp(0.0, 1.0),
+        borderAlpha: lerpDouble(AppGeometry.borderOpacity, 0.0, morphProgress)!,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,95 +171,67 @@ class _PlayerDockState extends State<PlayerDock>
             return AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {
-                final t = _controller.value;
-                final pill = _pillRect(
+                final pill = _getPillRect(
                   screen,
                   actualNavHeight,
                   navProgress,
                   bottomMargin,
                 );
-                final sheet = _sheetRect(screen);
-
-                final movingRect = Rect.lerp(pill, sheet, t)!;
-                final startRadius = pill.height / 2;
-                final radius = lerpDouble(
-                  startRadius,
-                  AppGeometry.deviceCornerRadius,
-                  t,
-                )!;
-
-                final pillContentOpacity = (1 - t * 8).clamp(0.0, 1.0);
-                final sheetContentOpacity = t.clamp(0.0, 1.0);
-
-                // Fade out border as it opens to full screen
-                final borderAlpha = lerpDouble(0.25, 0.0, t)!;
+                final layout = _calculateLayout(
+                  t: _controller.value,
+                  pill: pill,
+                  screen: screen,
+                );
 
                 return Positioned.fromRect(
-                  rect: movingRect,
+                  rect: layout.rect,
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onTap: _onTap,
                     onVerticalDragStart: _onDragStart,
                     onVerticalDragUpdate: _onDragUpdate,
                     onVerticalDragEnd: _onDragEnd,
-                    child: ClipRRect(
-                      clipBehavior: Clip.antiAlias,
-                      borderRadius: BorderRadius.circular(radius),
-                      child: BackdropFilter(
-                        filter: _blurFilter,
-                        child: Container(
-                          foregroundDecoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.white.withValues(
-                                alpha: borderAlpha,
-                              ),
-                              width: 0.8,
-                            ),
-                            borderRadius: BorderRadius.circular(radius),
-                          ),
-                          decoration: const BoxDecoration(
-                            color: Color(0x20000000),
-                          ),
-                          child: Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.bottomCenter,
-                                child: SizedBox(
-                                  height: pill.height,
-                                  child: Opacity(
-                                    opacity: pillContentOpacity,
-                                    child: IgnorePointer(
-                                      ignoring: t > 0.3,
-                                      child: const MiniPlayerContent(),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Opacity(
-                                opacity: sheetContentOpacity,
+                    child: FrostedGlassShell(
+                      radius: layout.radius,
+                      borderAlpha: layout.borderAlpha,
+                      child: Stack(
+                        children: [
+                          Align(
+                            alignment: Alignment.center,
+                            child: SizedBox(
+                              height: pill.height,
+                              child: Opacity(
+                                opacity: layout.pillOpacity,
                                 child: IgnorePointer(
-                                  ignoring: t < 0.7,
-                                  child: OverflowBox(
-                                    alignment: Alignment.topLeft,
-                                    minWidth: 0,
-                                    maxWidth: double.infinity,
-                                    minHeight: 0,
-                                    maxHeight: double.infinity,
-                                    child: SizedBox(
-                                      width: screen.width,
-                                      height: screen.height,
-                                      child: const MusicPlayerPlaceholder(),
-                                    ),
-                                  ),
+                                  ignoring: layout.pillOpacity < 0.5,
+                                  child: const MiniPlayerContent(),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          Opacity(
+                            opacity: layout.sheetOpacity,
+                            child: IgnorePointer(
+                              ignoring: layout.sheetOpacity < 0.5,
+                              child: OverflowBox(
+                                alignment: Alignment.topCenter,
+                                minWidth: 0,
+                                maxWidth: double.infinity,
+                                minHeight: 0,
+                                maxHeight: double.infinity,
+                                child: SizedBox(
+                                  width: screen.width,
+                                  height: screen.height,
+                                  child: const MusicPlayerPlaceholder(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                );
+                ); // return
               },
             );
           },
@@ -225,4 +239,21 @@ class _PlayerDockState extends State<PlayerDock>
       },
     );
   }
+}
+
+/// Immutable snapshot of animation attributes for a single frame
+class _DockLayout {
+  final Rect rect;
+  final double radius;
+  final double pillOpacity;
+  final double sheetOpacity;
+  final double borderAlpha;
+
+  const _DockLayout({
+    required this.rect,
+    required this.radius,
+    required this.pillOpacity,
+    required this.sheetOpacity,
+    required this.borderAlpha,
+  });
 }

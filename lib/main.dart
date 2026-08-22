@@ -96,14 +96,14 @@ class _AppShellState extends State<AppShell> {
         if (_scrollAccumulator < 0) _scrollAccumulator = 0.0;
         _scrollAccumulator += deltaSinceLastFrame;
 
-        if (_scrollAccumulator > AppTiming.scrollBuffer) {
+        if (_scrollAccumulator > 10.0) {
           _isBottomBarVisible.value = false;
         }
       } else if (deltaSinceLastFrame < 0) {
         if (_scrollAccumulator > 0) _scrollAccumulator = 0.0;
         _scrollAccumulator += deltaSinceLastFrame;
 
-        if (_scrollAccumulator < -AppTiming.scrollBuffer) {
+        if (_scrollAccumulator < -10.0) {
           _isBottomBarVisible.value = true;
         }
       }
@@ -169,12 +169,15 @@ class PHSongList extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.only(
         top: AppInset.topBarHeight(context),
-        bottom: AppInset.bottomNavHeightWithPad(context),
+        bottom: AppInset.totalBottomheight(context),
       ),
       itemCount: 32,
       separatorBuilder: (context, index) => Container(
         height: 1,
-        margin: const EdgeInsets.only(left: 75),
+        margin: const EdgeInsets.only(
+          left: 75,
+          right: AppInset.screenEdgePadding,
+        ),
         color: Colors.white12,
       ),
       itemBuilder: (context, i) {
@@ -189,7 +192,7 @@ class PHSongList extends StatelessWidget {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
                   child: Container(
                     width: 52,
                     height: 52,
@@ -198,7 +201,7 @@ class PHSongList extends StatelessWidget {
                     child: const Icon(Icons.music_note, color: Colors.white70),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +214,7 @@ class PHSongList extends StatelessWidget {
                           fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs3),
                       Text(
                         "Artist Name",
                         style: TextStyle(

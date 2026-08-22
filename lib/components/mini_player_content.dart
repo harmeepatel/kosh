@@ -12,24 +12,25 @@ class MiniPlayerContent extends StatelessWidget {
     return SizedBox(
       height: navHeight,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                width: iconSize,
-                height: iconSize,
-                color: Colors.grey.shade800,
-                child: Icon(
-                  Icons.music_note,
-                  color: Colors.white54,
-                  size: iconSize * 0.65,
+              borderRadius: BorderRadius.circular(5),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Container(
+                  color: Colors.grey.shade800,
+                  child: Icon(
+                    Icons.music_note,
+                    color: Colors.white54,
+                    size: iconSize,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,7 +48,7 @@ class MiniPlayerContent extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
                   Text(
                     "Simple Minds",
                     style: TextStyle(
@@ -72,15 +73,18 @@ class MiniPlayerContent extends StatelessWidget {
               onPressed: () {},
             ),
             const SizedBox(width: 6),
-            IconButton(
-              padding: EdgeInsets.zero,
-              constraints: BoxConstraints.tight(Size(iconSize, iconSize)),
-              icon: Icon(
-                Icons.fast_forward_rounded,
-                color: Colors.white,
-                size: iconSize * 0.75,
+            AspectRatio(
+              aspectRatio: 1,
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints.tight(Size(iconSize, iconSize)),
+                icon: Icon(
+                  Icons.fast_forward_rounded,
+                  color: Colors.white,
+                  size: iconSize * 0.75,
+                ),
+                onPressed: () {},
               ),
-              onPressed: () {},
             ),
           ],
         ),

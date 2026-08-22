@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kosh/components/frosted_glass.dart';
 import 'package:kosh/style.dart';
 
 class NavTab {
@@ -34,11 +35,10 @@ class _BottomTabBarState extends State<BottomTabBar> {
   static const _tabWidth = AppGeometry.bottomNavIconSize * 2;
   static const _blobWidth = 200.0;
 
-  static final _blurFilter = ImageFilter.blur(
-    sigmaX: AppBlur.bottomNavBlur,
-    sigmaY: AppBlur.bottomNavBlur,
+  static final _blobBlurFilter = ImageFilter.blur(
+    sigmaX: AppBlur.md,
+    sigmaY: AppBlur.md,
   );
-  static final _blobBlurFilter = ImageFilter.blur(sigmaX: 32, sigmaY: 32);
 
   int? _previewIndex;
 
@@ -55,7 +55,7 @@ class _BottomTabBarState extends State<BottomTabBar> {
   int get _activeIndex => _previewIndex ?? widget.selectedIndex;
 
   double _calculateBlobDx(double localDx) {
-    return localDx + Spacing.xs - (_blobWidth / 2);
+    return localDx + AppSpacing.xs - (_blobWidth / 2);
   }
 
   void _updateInteraction(Offset localPosition) {
@@ -114,10 +114,9 @@ class _BottomTabBarState extends State<BottomTabBar> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final navHeight = AppInset.navBarHeight();
-    final collapsedWidth =
-        navHeight; // Perfectly square/circle matching nav height
+    final collapsedWidth = navHeight;
     final expandedWidth =
-        (widget.tabs.length * _tabWidth) + (AppGeometry.bottomNavPadding * 2);
+        (widget.tabs.length * _tabWidth) + (AppSpacing.sm * 2);
 
     final expandedLeft = (screenWidth - expandedWidth) / 2;
     final collapsedLeft = AppInset.screenEdgePadding;
@@ -152,16 +151,9 @@ class _BottomTabBarState extends State<BottomTabBar> {
                 child: ClipRRect(
                   clipBehavior: Clip.antiAlias,
                   borderRadius: BorderRadius.circular(navHeight / 2),
-                  child: BackdropFilter(
-                    filter: _blurFilter,
+                  child: FrostedGlassShell(
+                    radius: navHeight / 2,
                     child: Container(
-                      foregroundDecoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
-                          width: 0.8,
-                        ),
-                        borderRadius: BorderRadius.circular(navHeight / 2),
-                      ),
                       decoration: const BoxDecoration(color: Color(0x20000000)),
                       child: Stack(
                         alignment: Alignment.center,
@@ -273,7 +265,9 @@ class _TabItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Icon(
       tab.icon,
-      color: selected ? Colors.red.shade600 : const Color(0xffbcbcbc),
+      color: selected
+          ? Colors.red.shade500.withValues(alpha: 0.8)
+          : Colors.white.withValues(alpha: 0.6),
       size: AppGeometry.bottomNavIconSize,
     );
   }
