@@ -1,8 +1,10 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/components/bottom_tab_bar.dart';
 import 'package:kosh/components/player_dock.dart';
+import 'package:kosh/components/song_library.dart';
 import 'package:kosh/components/top_bar.dart';
 import 'package:kosh/components/screen_content.dart';
 import 'package:kosh/style.dart';
@@ -20,8 +22,12 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
-      // showPerformanceOverlay: true,
       color: Colors.black,
+      localizationsDelegates: const [
+        DefaultMaterialLocalizations.delegate,
+        DefaultWidgetsLocalizations.delegate,
+        DefaultCupertinoLocalizations.delegate,
+      ],
       builder: (context, _) => Overlay(
         initialEntries: [OverlayEntry(builder: (context) => const AppShell())],
       ),
@@ -45,7 +51,9 @@ enum AppTab {
   const AppTab({required this.label, required this.icon, required this.color});
 
   NavTab get navTab => NavTab(icon: icon, label: label);
-  Widget buildPage() => PHSongList(title: label, color: color);
+  Widget buildPage() => this == AppTab.home
+      ? const SongListView()
+      : PHSongList(title: label, color: color);
 }
 
 class AppShell extends StatefulWidget {
@@ -192,7 +200,10 @@ class PHSongList extends StatelessWidget {
             child: Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                  borderRadius: SmoothBorderRadius(
+                    cornerRadius: AppRadii.sm,
+                    cornerSmoothing: AppRadii.cornerSmoothing,
+                  ),
                   child: Container(
                     width: 52,
                     height: 52,

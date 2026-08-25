@@ -13,7 +13,11 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.9
   inspire_blur: ^0.4.0
-  oc_liquid_glass: ^0.3.0
+  on_audio_query: ^2.9.0
+  permission_handler: ^11.3.0
+  path_provider: ^2.1.0
+  flutter_taglib: ^1.5.2
+  figma_squircle: ^0.6.3
 
 dev_dependencies:
   flutter_test:

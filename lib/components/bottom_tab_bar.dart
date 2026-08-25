@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,8 +33,8 @@ class BottomTabBar extends StatefulWidget {
 }
 
 class _BottomTabBarState extends State<BottomTabBar> {
-  static const _tabWidth = AppGeometry.bottomNavIconSize * 2;
-  static const _blobWidth = 200.0;
+  static const _tabWidth = AppAlbumCoverSize.xs * AppGeometry.goldenRatio;
+  static const _blobWidth =200.0;
 
   static final _blobBlurFilter = ImageFilter.blur(
     sigmaX: AppBlur.md,
@@ -113,8 +114,8 @@ class _BottomTabBarState extends State<BottomTabBar> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final navHeight = AppInset.navBarHeight();
-    final collapsedWidth = navHeight;
+    final navHeight = AppAlbumCoverSize.sm;
+    final collapsedWidth = AppAlbumCoverSize.sm;
     final expandedWidth =
         (widget.tabs.length * _tabWidth) + (AppSpacing.sm * 2);
 
@@ -148,13 +149,25 @@ class _BottomTabBarState extends State<BottomTabBar> {
               height: navHeight,
               child: GestureDetector(
                 onTap: isVisible ? null : _expandNav,
-                child: ClipRRect(
+
+                child: ClipSmoothRect(
                   clipBehavior: Clip.antiAlias,
-                  borderRadius: BorderRadius.circular(navHeight / 2),
+                  radius: SmoothBorderRadius(
+                    cornerRadius: navHeight / 2,
+                    cornerSmoothing: AppRadii.cornerSmoothing,
+                  ),
+
                   child: FrostedGlassShell(
                     radius: navHeight / 2,
                     child: Container(
-                      decoration: const BoxDecoration(color: Color(0x20000000)),
+                      decoration: ShapeDecoration(
+                        shape: SmoothRectangleBorder(
+                          borderRadius: SmoothBorderRadius(
+                            cornerRadius: 10,
+                            cornerSmoothing: AppRadii.cornerSmoothing,
+                          ),
+                        ),
+                      ),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -165,6 +178,7 @@ class _BottomTabBarState extends State<BottomTabBar> {
                               selected: true,
                             ),
                           ),
+
                           Opacity(
                             opacity: ((progress - 0.5) * 2).clamp(0.0, 1.0),
                             child: SingleChildScrollView(
@@ -268,7 +282,7 @@ class _TabItem extends StatelessWidget {
       color: selected
           ? Colors.red.shade500.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.6),
-      size: AppGeometry.bottomNavIconSize,
+      size: AppAlbumCoverSize.xs,
     );
   }
 }

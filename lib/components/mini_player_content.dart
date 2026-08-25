@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:kosh/style.dart';
 
@@ -6,28 +7,36 @@ class MiniPlayerContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = AppGeometry.bottomNavIconSize;
+    final iconSize = AppAlbumCoverSize.sm;
     final navHeight = AppInset.navBarHeight();
 
     return SizedBox(
       height: navHeight,
+      // child: Padding(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.xs,
+          // TODO: make the content fit inside the pill excluding the rounding sides.
+          horizontal: 20, //AppSpacing.sm,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Container(
+            AspectRatio(
+              aspectRatio: 1,
+              child: Container(
+                width: AppAlbumCoverSize.xs,
+                height: AppAlbumCoverSize.xs,
+                decoration: ShapeDecoration(
                   color: Colors.grey.shade800,
-                  child: Icon(
-                    Icons.music_note,
-                    color: Colors.white54,
-                    size: iconSize,
+                  shape: SmoothRectangleBorder(
+                    borderRadius: SmoothBorderRadius(
+                      cornerRadius: AppRadii.xs,
+                      cornerSmoothing: AppRadii.cornerSmoothing,
+                    ),
                   ),
                 ),
+                child: Icon(Icons.music_note, color: Colors.white54),
               ),
             ),
             const SizedBox(width: AppSpacing.xs),

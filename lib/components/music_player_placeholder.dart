@@ -1,3 +1,4 @@
+import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
 import 'package:kosh/style.dart';
 
@@ -29,9 +30,14 @@ class MusicPlayerPlaceholder extends StatelessWidget {
                   child: Container(
                     width: MediaQuery.of(context).size.width * 0.2,
                     height: AppGeometry.borderWidth * 4,
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: Colors.white30,
-                      borderRadius: BorderRadius.circular(3),
+                      shape: SmoothRectangleBorder(
+                        borderRadius: SmoothBorderRadius(
+                          cornerRadius: AppRadii.xs,
+                          cornerSmoothing: AppRadii.cornerSmoothing,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -68,8 +74,11 @@ class _AlbumArtCover extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 38),
       child: AspectRatio(
         aspectRatio: 1,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: ClipSmoothRect(
+          radius: SmoothBorderRadius(
+            cornerRadius: AppRadii.lg,
+            cornerSmoothing: AppRadii.cornerSmoothing,
+          ),
           child: albumArt != null
               ? Image(image: albumArt!, fit: BoxFit.cover)
               : const _AlbumPlaceholder(),
@@ -174,9 +183,14 @@ class _PlaybackProgress extends StatelessWidget {
                     horizontal: 13,
                     vertical: 6,
                   ),
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadii.md),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: AppRadii.md,
+                        cornerSmoothing: AppRadii.cornerSmoothing,
+                      ),
+                    ),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

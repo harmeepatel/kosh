@@ -91,7 +91,7 @@ class _PlayerDockState extends State<PlayerDock>
     double navProgress,
     double bottomMargin,
   ) {
-    final navHeight = AppInset.navBarHeight();
+    final navHeight = AppAlbumCoverSize.sm;
     final gap = AppInset.screenEdgePadding;
     final collapsedNavWidth = navHeight;
 

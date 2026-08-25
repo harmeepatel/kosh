@@ -18,7 +18,6 @@ class AppSpacing {
   static const double xl = lg * ratio;
 }
 
-/// 2. APPLE-STYLE GEOMETRY & MATH
 class AppGeometry {
   AppGeometry._();
 
@@ -34,31 +33,17 @@ class AppGeometry {
     return math.max(0.0, outerRadius - padding);
   }
 
-  /// Apple's "Squircle" continuous curve approximation for standard shapes.
-  /// Drop this into a Container's decoration to get smoother corners than BorderRadius.circular.
-  static ShapeBorder squircleBorder(
-    double radius, {
-    BorderSide side = BorderSide.none,
-  }) {
-    return ContinuousRectangleBorder(
-      borderRadius: BorderRadius.circular(radius),
-      side: side,
-    );
-  }
-
   // --- Base Values ---
   static const double deviceCornerRadius = 34.0;
   static const double topBarHeight = 64.0;
 
   // Example specific sizes that can be adapted per project
-  static const double bottomNavIconSize = 28.0;
   static const double dockHeight = 52.0;
 
   static const double borderOpacity = 0.08;
   static const double borderWidth = 1.0;
 }
 
-/// 3. LAYOUT & INSETS
 class AppInset {
   AppInset._();
 
@@ -76,8 +61,7 @@ class AppInset {
   }
 
   static double navBarHeight() {
-    // 28.0 + (12.8 * 2) = 53.6
-    return AppGeometry.bottomNavIconSize + (AppSpacing.sm * 2);
+    return AppAlbumCoverSize.xs + (AppSpacing.sm * 2);
   }
 
   static double bottomNavHeightWithPad(BuildContext context) {
@@ -91,7 +75,6 @@ class AppInset {
   }
 }
 
-/// 4. TIMING
 class AppTiming {
   AppTiming._();
 
@@ -100,17 +83,29 @@ class AppTiming {
   static const Duration lg = Duration(milliseconds: 300);
 }
 
-/// 5. RADII & BLURS
-class AppRadii {
-  AppRadii._();
-  static const double sm = 6.0;
-  static const double md = 8.0;
-  static const double lg = 16.0;
-}
-
 class AppBlur {
   AppBlur._();
   static const double md = 16.0;
   static const double lg = md * AppGeometry.goldenRatio;
   static const double xl = lg * AppGeometry.goldenRatio;
+}
+
+class AppRadii {
+  AppRadii._();
+
+  static double cornerSmoothing = 1.0;
+
+  static const double xs = sm / AppGeometry.goldenRatio;
+  static const double sm = md / AppGeometry.goldenRatio;
+  static const double md = 8.0;
+  static const double lg = md * AppGeometry.goldenRatio;
+  static const double xl = lg * AppGeometry.goldenRatio;
+}
+
+class AppAlbumCoverSize {
+  AppAlbumCoverSize._();
+  static const double xs = sm / AppGeometry.goldenRatio;
+  static const double sm = 52.0;
+  static const double md = sm * AppGeometry.goldenRatio;
+  static const double lg = md * AppGeometry.goldenRatio;
 }
