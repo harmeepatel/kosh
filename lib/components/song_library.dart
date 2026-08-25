@@ -1,6 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_taglib/flutter_taglib.dart';
@@ -27,7 +27,8 @@ class AudioMetadata {
     this.duration,
     this.bitrate,
     this.sampleRate,
-    this.hasCover = false,
+    this.coverData,
+    this.coverMimeType,
   });
 
   final String? title;
@@ -40,7 +41,12 @@ class AudioMetadata {
   final int? duration;
   final int? bitrate;
   final int? sampleRate;
-  final bool hasCover;
+  final Uint8List? coverData;
+  final String? coverMimeType;
+
+  /// Derived from the actual image bytes, not a separately-tracked flag —
+  /// there's only one source of truth for whether cover art exists.
+  bool get hasCover => coverData != null;
 }
 
 /// Abstract metadata service for reading and writing audio tags via TagLib.
@@ -69,7 +75,8 @@ class AudioMetadataService {
         duration: file.duration.inSeconds,
         bitrate: file.bitrate,
         sampleRate: file.sampleRate,
-        hasCover: file.hasCover,
+        coverData: file.hasCover ? file.coverData : null,
+        coverMimeType: file.hasCover ? file.coverMimeType : null,
       );
     } finally {
       file.close();
@@ -118,6 +125,7 @@ class Song {
     required this.source,
     this.album,
     this.format,
+    this.coverData,
   });
 
   final String id;
@@ -125,6 +133,7 @@ class Song {
   final String artist;
   final String? album;
   final String? format;
+  final Uint8List? coverData;
   final SongSource source;
 }
 
@@ -228,6 +237,7 @@ class SongLibrary {
           artist: metadata?.artist ?? 'Unknown Artist',
           album: metadata?.album,
           format: metadata?.format,
+          coverData: metadata?.coverData,
           source: FileSource(file.path),
         ),
       );
@@ -268,13 +278,14 @@ class _SongListViewState extends State<SongListView> {
       body: FutureBuilder<List<Song>>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
             return const Center(
               child: CircularProgressIndicator(color: Colors.white54),
             );
           }
 
-          if (snapshot.hasError) {
+          if (snapshot.hasError && !snapshot.hasData) {
             return _CenteredMessage(
               icon: Icons.error_outline_rounded,
               text: 'Could not load songs.\n${snapshot.error}',
@@ -282,13 +293,15 @@ class _SongListViewState extends State<SongListView> {
           }
 
           final songs = snapshot.data ?? [];
-          if (songs.isEmpty) {
+          if (songs.isEmpty &&
+              snapshot.connectionState == ConnectionState.done) {
             return const _CenteredMessage(
               icon: Icons.music_off_rounded,
               text: 'No songs found.',
             );
           }
 
+          // Keep rendering the scroll view so pull-to-refresh stays smooth
           return CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
@@ -305,7 +318,10 @@ class _SongListViewState extends State<SongListView> {
                   separatorBuilder: (context, index) => Container(
                     height: 1,
                     margin: const EdgeInsets.only(
-                      left: 75,
+                      left:
+                          AppInset.screenEdgePadding +
+                          AppAlbumCoverSize.sm +
+                          AppSpacing.md,
                       right: AppInset.screenEdgePadding,
                     ),
                     color: Colors.white12,
@@ -341,17 +357,14 @@ class _SongTile extends StatelessWidget {
             Container(
               width: AppAlbumCoverSize.sm,
               height: AppAlbumCoverSize.sm,
-              alignment: Alignment.center,
-              decoration: ShapeDecoration(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
                 color: Colors.grey.shade800,
-                shape: SmoothRectangleBorder(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: AppRadii.sm,
-                    cornerSmoothing: AppRadii.cornerSmoothing,
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(AppRadii.sm),
               ),
-              child: const Icon(Icons.music_note, color: Colors.white70),
+              child: song.coverData != null
+                  ? Image.memory(song.coverData!, fit: BoxFit.cover)
+                  : const Icon(Icons.music_note, color: Colors.white70),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -378,7 +391,7 @@ class _SongTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.md),
             const Icon(Icons.more_horiz, color: Colors.grey),
           ],
         ),
