@@ -1,21 +1,24 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// 1. SPACING (Proportional Scale)
 class AppSpacing {
   AppSpacing._();
 
   static const double ratio = 1.25;
   static const double base = 16.0;
 
+  static const double xs6 = xs5 / ratio;
+  static const double xs5 = xs4 / ratio;
   static const double xs4 = xs3 / ratio;
   static const double xs3 = xs2 / ratio;
-  static const double xs2 = xs / ratio;
-  static const double xs = sm / ratio;
+  static const double xs2 = xs / ratio; // 10.24
+  static const double xs = sm / ratio; // 12.8
   static const double sm = base / ratio; // 12.8
   static const double md = base; // 16.0
   static const double lg = base * ratio; // 20.0
-  static const double xl = lg * ratio;
+  static const double xl = lg * ratio; // 25.0
+  static const double xxl = xl * ratio; // 31.25
+  static const double xxxl = xxl * ratio; // 39.06
 }
 
 class AppGeometry {
@@ -23,23 +26,15 @@ class AppGeometry {
 
   static const double goldenRatio = 1.618;
 
-  /// Calculates a perfect pill radius (always exactly half the height)
   static double pillRadius(double height) => height / 2;
 
-  /// The Golden Rule of Concentric Radii: Inner = Outer - Padding.
-  /// Use this whenever nesting a rounded box inside another rounded box.
-  /// The [math.max] ensures the radius never drops below 0.
   static double concentricRadius(double outerRadius, double padding) {
     return math.max(0.0, outerRadius - padding);
   }
 
-  // --- Base Values ---
   static const double deviceCornerRadius = 34.0;
   static const double topBarHeight = 64.0;
-
-  // Example specific sizes that can be adapted per project
   static const double dockHeight = 52.0;
-
   static const double borderOpacity = 0.08;
   static const double borderWidth = 1.0;
 }
@@ -47,7 +42,9 @@ class AppGeometry {
 class AppInset {
   AppInset._();
 
-  static const double screenEdgePadding = AppSpacing.xs2;
+  static const double screenEdgePadding = AppSpacing.md;
+  static const double listSeparatorLeft =
+      screenEdgePadding + AppAlbumCoverSize.sm + AppSpacing.md;
 
   static double topBarHeight(BuildContext context) {
     return AppGeometry.topBarHeight + MediaQuery.paddingOf(context).top;
@@ -77,7 +74,6 @@ class AppInset {
 
 class AppTiming {
   AppTiming._();
-
   static const Duration sm = Duration(milliseconds: 100);
   static const Duration md = Duration(milliseconds: 200);
   static const Duration lg = Duration(milliseconds: 300);
@@ -85,6 +81,8 @@ class AppTiming {
 
 class AppBlur {
   AppBlur._();
+  static const double xs = sm / AppGeometry.goldenRatio;
+  static const double sm = md / AppGeometry.goldenRatio;
   static const double md = 16.0;
   static const double lg = md * AppGeometry.goldenRatio;
   static const double xl = lg * AppGeometry.goldenRatio;
@@ -92,20 +90,45 @@ class AppBlur {
 
 class AppRadii {
   AppRadii._();
-
   static double cornerSmoothing = 1.0;
-
-  static const double xs = sm / AppGeometry.goldenRatio;
-  static const double sm = md / AppGeometry.goldenRatio;
   static const double md = 8.0;
+  static const double sm = md / AppGeometry.goldenRatio;
+  static const double xs = sm / AppGeometry.goldenRatio;
   static const double lg = md * AppGeometry.goldenRatio;
   static const double xl = lg * AppGeometry.goldenRatio;
 }
 
 class AppAlbumCoverSize {
   AppAlbumCoverSize._();
-  static const double xs = sm / AppGeometry.goldenRatio;
   static const double sm = 52.0;
+  static const double xs = sm / AppGeometry.goldenRatio;
   static const double md = sm * AppGeometry.goldenRatio;
   static const double lg = md * AppGeometry.goldenRatio;
+}
+
+class AppColors {
+  AppColors._();
+  static const Color background = Colors.black;
+  static const Color primaryText = Colors.white;
+  static final Color secondaryText = Colors.grey.shade400;
+  static final Color albumPlaceholder = Colors.grey.shade800;
+  static const Color divider = Colors.white12;
+}
+
+class AppTextStyles {
+  AppTextStyles._();
+  static const TextStyle header = TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w700,
+    color: AppColors.primaryText,
+  );
+  static const TextStyle listTitle = TextStyle(
+    color: AppColors.primaryText,
+    fontWeight: FontWeight.w600,
+    fontSize: 16,
+  );
+  static TextStyle listArtist = TextStyle(
+    color: AppColors.secondaryText,
+    fontSize: 14,
+  );
 }

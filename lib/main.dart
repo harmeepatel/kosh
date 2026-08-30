@@ -1,13 +1,15 @@
-import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kosh/components/bottom_tab_bar.dart';
-import 'package:kosh/components/player_dock.dart';
-import 'package:kosh/components/song_library.dart';
-import 'package:kosh/components/top_bar.dart';
-import 'package:kosh/components/screen_content.dart';
-import 'package:kosh/style.dart';
+
+import 'package:kosh/style/style.dart';
+import 'package:kosh/widgets/bottom_tab_bar.dart';
+import 'package:kosh/widgets/screen_content.dart';
+import 'package:kosh/widgets/song_list_tile.dart';
+import 'package:kosh/widgets/top_bar.dart';
+import 'package:kosh/widgets/player_dock.dart';
+import 'package:kosh/pages/song_library.dart';
+import 'package:kosh/player/song.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +24,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return WidgetsApp(
       debugShowCheckedModeBanner: false,
-      color: Colors.black,
+      color: AppColors.background,
       localizationsDelegates: const [
         DefaultMaterialLocalizations.delegate,
         DefaultWidgetsLocalizations.delegate,
@@ -58,16 +60,13 @@ enum AppTab {
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key, this.child});
-
   final Widget? child;
-
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
-
   final _scrollOffset = ValueNotifier<double>(0);
   double _lastOffset = 0.0;
   double _scrollAccumulator = 0.0;
@@ -75,7 +74,6 @@ class _AppShellState extends State<AppShell> {
   final _isPlayerSheetOpen = ValueNotifier<bool>(false);
 
   final scrollOffsets = List<double>.filled(AppTab.values.length, 0.0);
-
   late final List<Widget> _pages;
 
   @override
@@ -136,7 +134,7 @@ class _AppShellState extends State<AppShell> {
     final tabs = AppTab.values.map((t) => t.navTab).toList();
 
     return ColoredBox(
-      color: Colors.black,
+      color: AppColors.background,
       child: Stack(
         children: [
           ScreenContent(
@@ -147,7 +145,7 @@ class _AppShellState extends State<AppShell> {
             scrollOffset: _scrollOffset,
             title: Text(
               AppTab.values[_selectedIndex].label,
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+              style: AppTextStyles.header,
             ),
           ),
           BottomTabBar(
@@ -183,64 +181,21 @@ class PHSongList extends StatelessWidget {
       separatorBuilder: (context, index) => Container(
         height: 1,
         margin: const EdgeInsets.only(
-          left: 75,
+          left: AppInset.listSeparatorLeft,
           right: AppInset.screenEdgePadding,
         ),
-        color: Colors.white12,
+        color: AppColors.divider,
       ),
       itemBuilder: (context, i) {
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {},
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppInset.screenEdgePadding,
-              vertical: AppInset.screenEdgePadding,
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: SmoothBorderRadius(
-                    cornerRadius: AppRadii.sm,
-                    cornerSmoothing: AppRadii.cornerSmoothing,
-                  ),
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    color: color.withValues(alpha: 0.5),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.music_note, color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Song Title ${i + 1}",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs3),
-                      Text(
-                        "Artist Name",
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                const Icon(Icons.more_horiz, color: Colors.grey),
-              ],
-            ),
+        return SongListTile(
+          song: Song(
+            id: 'ph_$i',
+            title: "Song Title ${i + 1}",
+            artist: "Artist Name",
+            filePath: '',
+            format: "test",
           ),
+          fallbackColor: color.withValues(alpha: 0.5),
         );
       },
     );

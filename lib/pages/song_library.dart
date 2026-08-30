@@ -4,17 +4,17 @@ import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_taglib/flutter_taglib.dart';
+import 'package:kosh/player/song.dart';
+import 'package:kosh/style/style.dart';
+import 'package:kosh/widgets/song_list_tile.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:kosh/style.dart';
-
 // =============================================================================
-// 1. METADATA ABSTRACTION (Shared between Android & iOS)
+// METADATA ABSTRACTION (Shared between Android & iOS)
 // =============================================================================
 
-/// Structured representation of audio file metadata.
 class AudioMetadata {
   const AudioMetadata({
     this.title,
@@ -31,35 +31,18 @@ class AudioMetadata {
     this.coverMimeType,
   });
 
-  final String? title;
-  final String? artist;
-  final String? album;
-  final String? genre;
-  final int? year;
-  final int? track;
-  final String? format;
-  final int? duration;
-  final int? bitrate;
-  final int? sampleRate;
+  final String? title, artist, album, genre, format, coverMimeType;
+  final int? year, track, duration, bitrate, sampleRate;
   final Uint8List? coverData;
-  final String? coverMimeType;
 
-  /// Derived from the actual image bytes, not a separately-tracked flag —
-  /// there's only one source of truth for whether cover art exists.
   bool get hasCover => coverData != null;
 }
 
-/// Abstract metadata service for reading and writing audio tags via TagLib.
 class AudioMetadataService {
   AudioMetadataService._();
 
-  /// Reads metadata tags and audio properties from a file path.
   static AudioMetadata? readMetadata(String filePath) {
-    if (!TagLibFile.isSupported) {
-      debugPrint('TagLib is not supported on this platform.');
-      return null;
-    }
-
+    if (!TagLibFile.isSupported) return null;
     final file = TagLibFile.open(filePath);
     if (file == null) return null;
 
@@ -83,7 +66,6 @@ class AudioMetadataService {
     }
   }
 
-  /// Writes/Updates metadata tags for a file path.
   static bool writeMetadata(
     String filePath, {
     String? title,
@@ -94,7 +76,6 @@ class AudioMetadataService {
     int? track,
   }) {
     if (!TagLibFile.isSupported) return false;
-
     final file = TagLibFile.open(filePath);
     if (file == null) return false;
 
@@ -105,7 +86,6 @@ class AudioMetadataService {
       if (genre != null) file.genre = genre;
       if (year != null) file.year = year;
       if (track != null) file.track = track;
-
       return file.save();
     } finally {
       file.close();
@@ -114,50 +94,11 @@ class AudioMetadataService {
 }
 
 // =============================================================================
-// 2. SONG & SOURCE MODELS
-// =============================================================================
-
-class Song {
-  const Song({
-    required this.id,
-    required this.title,
-    required this.artist,
-    required this.source,
-    this.album,
-    this.format,
-    this.coverData,
-  });
-
-  final String id;
-  final String title;
-  final String artist;
-  final String? album;
-  final String? format;
-  final Uint8List? coverData;
-  final SongSource source;
-}
-
-sealed class SongSource {
-  const SongSource();
-}
-
-class MediaStoreSource extends SongSource {
-  const MediaStoreSource(this.uri);
-  final String uri;
-}
-
-class FileSource extends SongSource {
-  const FileSource(this.path);
-  final String path;
-}
-
-// =============================================================================
-// 3. SONG LIBRARY & DISCOVERY
+// SONG LIBRARY & DISCOVERY
 // =============================================================================
 
 class SongLibrary {
   SongLibrary._();
-
   static const _audioExtensions = {'mp3', 'm4a', 'wav', 'aac', 'flac', 'opus'};
 
   static Future<List<Song>> fetchAll() {
@@ -168,16 +109,12 @@ class SongLibrary {
 
   static Future<List<Song>> _fetchAndroid() async {
     final status = await Permission.audio.request();
-    if (!status.isGranted) {
-      throw StateError('Audio permission was denied');
-    }
+    if (!status.isGranted) throw StateError('Audio permission was denied');
 
-    final query = OnAudioQuery();
-    final tracks = await query.querySongs(
+    final tracks = await OnAudioQuery().querySongs(
       sortType: SongSortType.TITLE,
       orderType: OrderType.ASC_OR_SMALLER,
     );
-
     return tracks
         .where((t) => t.uri != null)
         .map(
@@ -188,7 +125,7 @@ class SongLibrary {
                 ? 'Unknown Artist'
                 : t.artist!,
             album: t.album,
-            source: MediaStoreSource(t.uri!),
+            filePath: t.uri!,
           ),
         )
         .toList();
@@ -198,7 +135,6 @@ class SongLibrary {
     final dir = await getApplicationDocumentsDirectory();
     if (!dir.existsSync()) return [];
 
-    // Purge unwanted trash directory if it exists
     final trashDir = Directory('${dir.path}/.Trash');
     if (trashDir.existsSync()) {
       try {
@@ -209,21 +145,16 @@ class SongLibrary {
     return scanDirectory(dir);
   }
 
-  /// Scans any target directory in-place without copying files.
-  /// Filters out hidden directories (like .Trash or system folders).
   static Future<List<Song>> scanDirectory(Directory dir) async {
     if (!dir.existsSync()) return [];
 
     final files = dir.listSync(recursive: true).whereType<File>().where((f) {
-      // Exclude hidden files or folders starting with "."
       final isHidden = f.uri.pathSegments.any((s) => s.startsWith('.'));
       return !isHidden && _audioExtensions.contains(_extensionOf(f.path));
     });
 
     final songs = <Song>[];
-
     for (final file in files) {
-      // Common metadata abstraction call
       final metadata = AudioMetadataService.readMetadata(file.path);
       final fileName = file.uri.pathSegments.last;
       final fallbackTitle = fileName.contains('.')
@@ -237,12 +168,11 @@ class SongLibrary {
           artist: metadata?.artist ?? 'Unknown Artist',
           album: metadata?.album,
           format: metadata?.format,
-          coverData: metadata?.coverData,
-          source: FileSource(file.path),
+          albumArt: metadata?.coverData,
+          filePath: file.path,
         ),
       );
     }
-
     songs.sort((a, b) => a.title.compareTo(b.title));
     return songs;
   }
@@ -252,7 +182,7 @@ class SongLibrary {
 }
 
 // =============================================================================
-// 4. UI VIEWS
+// UI VIEWS
 // =============================================================================
 
 class SongListView extends StatefulWidget {
@@ -274,7 +204,7 @@ class _SongListViewState extends State<SongListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: FutureBuilder<List<Song>>(
         future: _future,
         builder: (context, snapshot) {
@@ -293,42 +223,67 @@ class _SongListViewState extends State<SongListView> {
           }
 
           final songs = snapshot.data ?? [];
-          if (songs.isEmpty &&
-              snapshot.connectionState == ConnectionState.done) {
-            return const _CenteredMessage(
-              icon: Icons.music_off_rounded,
-              text: 'No songs found.',
-            );
-          }
 
-          // Keep rendering the scroll view so pull-to-refresh stays smooth
           return CustomScrollView(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
             slivers: [
-              CupertinoSliverRefreshControl(onRefresh: () async => _reload()),
-              SliverPadding(
-                padding: EdgeInsets.only(
-                  top: AppInset.topBarHeight(context),
-                  bottom: AppInset.totalBottomheight(context),
-                ),
-                sliver: SliverList.separated(
-                  itemCount: songs.length,
-                  separatorBuilder: (context, index) => Container(
-                    height: 1,
-                    margin: const EdgeInsets.only(
-                      left:
-                          AppInset.screenEdgePadding +
-                          AppAlbumCoverSize.sm +
-                          AppSpacing.md,
-                      right: AppInset.screenEdgePadding,
-                    ),
-                    color: Colors.white12,
-                  ),
-                  itemBuilder: (context, i) => _SongTile(song: songs[i]),
-                ),
+              CupertinoSliverRefreshControl(
+                onRefresh: () async => _reload(),
+                builder:
+                    (
+                      context,
+                      refreshState,
+                      pulledExtent,
+                      refreshTriggerPullDistance,
+                      refreshIndicatorExtent,
+                    ) {
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          top: MediaQuery.paddingOf(context).top,
+                        ),
+                        child:
+                            CupertinoSliverRefreshControl.buildRefreshIndicator(
+                              context,
+                              refreshState,
+                              pulledExtent,
+                              refreshTriggerPullDistance,
+                              refreshIndicatorExtent,
+                            ),
+                      );
+                    },
               ),
+
+              if (songs.isEmpty &&
+                  snapshot.connectionState == ConnectionState.done)
+                const SliverFillRemaining(
+                  child: _CenteredMessage(
+                    icon: Icons.music_off_rounded,
+                    text: 'No Songs...',
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    top: AppInset.topBarHeight(context),
+                    bottom: AppInset.totalBottomheight(context),
+                  ),
+                  sliver: SliverList.separated(
+                    itemCount: songs.length,
+                    separatorBuilder: (context, index) => Container(
+                      height: 1,
+                      margin: const EdgeInsets.only(
+                        left: AppInset.listSeparatorLeft,
+                        right: AppInset.screenEdgePadding,
+                      ),
+                      color: AppColors.divider,
+                    ),
+                    itemBuilder: (context, i) {
+                      return SongListTile(song: songs[i]);
+                    },
+                  ),
+                ),
             ],
           );
         },
@@ -337,72 +292,8 @@ class _SongListViewState extends State<SongListView> {
   }
 }
 
-class _SongTile extends StatelessWidget {
-  const _SongTile({required this.song});
-
-  final Song song;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppInset.screenEdgePadding,
-          vertical: AppInset.screenEdgePadding,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: AppAlbumCoverSize.sm,
-              height: AppAlbumCoverSize.sm,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade800,
-                borderRadius: BorderRadius.circular(AppRadii.sm),
-              ),
-              child: song.coverData != null
-                  ? Image.memory(song.coverData!, fit: BoxFit.cover)
-                  : const Icon(Icons.music_note, color: Colors.white70),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    song.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs3),
-                  Text(
-                    '${song.artist}${song.format != null ? " • ${song.format}" : ""}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            const Icon(Icons.more_horiz, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _CenteredMessage extends StatelessWidget {
   const _CenteredMessage({required this.icon, required this.text});
-
   final IconData icon;
   final String text;
 
@@ -419,7 +310,9 @@ class _CenteredMessage extends StatelessWidget {
             Text(
               text,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              style: TextStyle(
+                color: AppColors.primaryText.withValues(alpha: 0.6),
+              ),
             ),
           ],
         ),

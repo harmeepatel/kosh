@@ -1,15 +1,13 @@
 import 'dart:ui';
-
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kosh/components/frosted_glass.dart';
-import 'package:kosh/style.dart';
+import 'package:kosh/style/style.dart';
+import 'package:kosh/widgets/frosted_glass.dart';
 
 class NavTab {
   const NavTab({required this.icon, required this.label});
-
   final IconData icon;
   final String label;
 }
@@ -34,7 +32,7 @@ class BottomTabBar extends StatefulWidget {
 
 class _BottomTabBarState extends State<BottomTabBar> {
   static const _tabWidth = AppAlbumCoverSize.xs * AppGeometry.goldenRatio;
-  static const _blobWidth =200.0;
+  static const _blobWidth = 200.0;
 
   static final _blobBlurFilter = ImageFilter.blur(
     sigmaX: AppBlur.md,
@@ -42,7 +40,6 @@ class _BottomTabBarState extends State<BottomTabBar> {
   );
 
   int? _previewIndex;
-
   final ValueNotifier<double> _blobPosition = ValueNotifier(0.0);
   final ValueNotifier<bool> _isInteracting = ValueNotifier(false);
 
@@ -61,7 +58,6 @@ class _BottomTabBarState extends State<BottomTabBar> {
 
   void _updateInteraction(Offset localPosition) {
     final index = _indexForPosition(localPosition.dx);
-
     _isInteracting.value = true;
     _blobPosition.value = _calculateBlobDx(localPosition.dx);
 
@@ -118,7 +114,6 @@ class _BottomTabBarState extends State<BottomTabBar> {
     final collapsedWidth = AppAlbumCoverSize.sm;
     final expandedWidth =
         (widget.tabs.length * _tabWidth) + (AppSpacing.sm * 2);
-
     final expandedLeft = (screenWidth - expandedWidth) / 2;
     final collapsedLeft = AppInset.screenEdgePadding;
     final bottomMargin = AppInset.bottomMargin(context);
@@ -149,14 +144,12 @@ class _BottomTabBarState extends State<BottomTabBar> {
               height: navHeight,
               child: GestureDetector(
                 onTap: isVisible ? null : _expandNav,
-
                 child: ClipSmoothRect(
                   clipBehavior: Clip.antiAlias,
                   radius: SmoothBorderRadius(
                     cornerRadius: navHeight / 2,
                     cornerSmoothing: AppRadii.cornerSmoothing,
                   ),
-
                   child: FrostedGlassShell(
                     radius: navHeight / 2,
                     child: Container(
@@ -178,7 +171,6 @@ class _BottomTabBarState extends State<BottomTabBar> {
                               selected: true,
                             ),
                           ),
-
                           Opacity(
                             opacity: ((progress - 0.5) * 2).clamp(0.0, 1.0),
                             child: SingleChildScrollView(
@@ -271,7 +263,6 @@ class _BottomTabBarState extends State<BottomTabBar> {
 
 class _TabItem extends StatelessWidget {
   const _TabItem({required this.tab, required this.selected});
-
   final NavTab tab;
   final bool selected;
 

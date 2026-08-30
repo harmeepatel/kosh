@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
-import '../style.dart';
+import 'package:kosh/style/style.dart';
 
 class FrostedGlassShell extends StatelessWidget {
   const FrostedGlassShell({
@@ -9,7 +9,7 @@ class FrostedGlassShell extends StatelessWidget {
     required this.radius,
     required this.child,
     this.borderAlpha = AppGeometry.borderOpacity,
-    this.blurSigma = AppBlur.lg,
+    this.blurSigma = AppBlur.sm,
     this.grainOpacity = 0.1,
   });
 
@@ -19,7 +19,7 @@ class FrostedGlassShell extends StatelessWidget {
   final double blurSigma;
   final double grainOpacity;
 
-  Color get backgroundColor => Colors.black.withValues(alpha: 0.32);
+  Color get backgroundColor => Colors.black.withValues(alpha: 0.4);
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +40,6 @@ class FrostedGlassShell extends StatelessWidget {
               child: const SizedBox.shrink(),
             ),
           ),
-
-          // The Grain Overlay
           Positioned.fill(
             child: Opacity(
               opacity: grainOpacity,
@@ -49,12 +47,10 @@ class FrostedGlassShell extends StatelessWidget {
                 'assets/noise.png',
                 repeat: ImageRepeat.repeat,
                 fit: BoxFit.fill,
-                colorBlendMode: .difference,
+                colorBlendMode: BlendMode.difference,
               ),
             ),
           ),
-
-          // 3. The Border, Background Color, and Content
           Container(
             decoration: BoxDecoration(
               color: backgroundColor,

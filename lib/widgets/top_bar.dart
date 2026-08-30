@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:inspire_blur/inspire_blur.dart';
-import 'package:kosh/style.dart';
+import 'package:kosh/style/style.dart';
 
 class TopBar extends StatelessWidget {
   const TopBar({
@@ -51,7 +51,7 @@ class _BlurLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sigma =  AppBlur.lg * progress;
+    final sigma = AppBlur.lg * progress;
 
     return Inspire.backdropBlur(
       config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.1),

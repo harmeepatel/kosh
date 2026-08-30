@@ -1,11 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:kosh/components/mini_player_content.dart';
-import 'package:kosh/components/music_player_placeholder.dart';
-import 'package:kosh/style.dart';
-
-import 'frosted_glass.dart';
+import 'package:kosh/style/style.dart';
+import 'package:kosh/widgets/frosted_glass.dart';
+import 'mini_player_content.dart';
+import 'full_player.dart';
 
 class PlayerDock extends StatefulWidget {
   const PlayerDock({
@@ -29,7 +28,7 @@ class _PlayerDockState extends State<PlayerDock>
     value: widget.isOpenNotifier.value ? 1.0 : 0.0,
   );
 
-  final double _draggableDistance = 0.7; // Stops sliding straight at 70%
+  final double _draggableDistance = 0.7;
 
   @override
   void initState() {
@@ -64,11 +63,8 @@ class _PlayerDockState extends State<PlayerDock>
 
   void _onDragUpdate(DragUpdateDetails details) {
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final delta = details.primaryDelta ?? 0;
-
-    // The total draggable distance is now 70% of the screen height
     final travelDistance = screenHeight * _draggableDistance;
-
+    final delta = details.primaryDelta ?? 0;
     _controller.value = (_controller.value - delta / travelDistance).clamp(
       0.0,
       1.0,
@@ -92,7 +88,7 @@ class _PlayerDockState extends State<PlayerDock>
     double bottomMargin,
   ) {
     final navHeight = AppAlbumCoverSize.sm;
-    final gap = AppInset.screenEdgePadding;
+    final gap = AppSpacing.xs5;
     final collapsedNavWidth = navHeight;
 
     final collapsedRect = Rect.fromLTWH(
@@ -119,7 +115,6 @@ class _PlayerDockState extends State<PlayerDock>
   }) {
     final sheetRadius = AppGeometry.deviceCornerRadius;
     final pillRadius = pill.height / 2;
-
     const morphThreshold = 0.3;
 
     if (t >= morphThreshold) {
@@ -136,7 +131,6 @@ class _PlayerDockState extends State<PlayerDock>
       );
     } else {
       final morphProgress = t / morphThreshold;
-
       final slideEndRect = Rect.fromLTWH(
         0,
         screen.height * _draggableDistance,
@@ -194,6 +188,7 @@ class _PlayerDockState extends State<PlayerDock>
                     child: FrostedGlassShell(
                       radius: layout.radius,
                       borderAlpha: layout.borderAlpha,
+
                       child: Stack(
                         children: [
                           Align(
@@ -209,6 +204,7 @@ class _PlayerDockState extends State<PlayerDock>
                               ),
                             ),
                           ),
+
                           Opacity(
                             opacity: layout.sheetOpacity,
                             child: IgnorePointer(
@@ -222,7 +218,7 @@ class _PlayerDockState extends State<PlayerDock>
                                 child: SizedBox(
                                   width: screen.width,
                                   height: screen.height,
-                                  child: const MusicPlayerPlaceholder(),
+                                  child: const FullPlayer(),
                                 ),
                               ),
                             ),
@@ -231,7 +227,7 @@ class _PlayerDockState extends State<PlayerDock>
                       ),
                     ),
                   ),
-                ); // return
+                );
               },
             );
           },
@@ -241,7 +237,6 @@ class _PlayerDockState extends State<PlayerDock>
   }
 }
 
-/// Immutable snapshot of animation attributes for a single frame
 class _DockLayout {
   final Rect rect;
   final double radius;

@@ -1,0 +1,51 @@
+Here is a concrete, step-by-step implementation plan using native Flutter APIs to connect your player UI now and prepare for database integration later.
+
+Step 1: Build the Database-Ready Model
+
+Create lib/models/song.dart.
+
+Define the Song class with basic properties: id, title, artist, and filePath.
+
+Write factory Song.fromMap(Map<String, dynamic> map) and Map<String, dynamic> toMap() methods. This ensures the object is ready to be inserted into or read from a SQLite database without altering the class later.
+
+Step 2: Establish Native App State
+
+Create lib/state/player_state.dart.
+
+Create a simple singleton class utilizing Flutter's native ValueNotifier to avoid third-party state management packages:
+class PlayerState { static final currentSong = ValueNotifier<Song?>(null); }
+
+Step 3: Wire the Player UI (Your Current Goal)
+
+In lib/widgets/song_list_tile.dart, update the onTap method to update the active song:
+PlayerState.currentSong.value = song;
+
+In lib/player/mini_player_content.dart and lib/player/full_player.dart, wrap your title/artist Text widgets with a ValueListenableBuilder.
+
+Pass PlayerState.currentSong to the valueListenable property. These widgets will now automatically rebuild with the correct info whenever a list tile is tapped.
+
+Step 4: Create the Data Repository
+
+Create lib/data/song_repository.dart.
+
+Write a SongRepository class with a method Future<List<Song>> getAllSongs().
+
+Temporarily return a hardcoded List<Song> (your dummy data). This separates your data logic from your UI logic immediately.
+
+Step 5: Implement In-Memory Sorting & Filtering
+
+In SongRepository, add methods like Future<List<Song>> getSongsSortedBy(String criterion).
+
+Implement standard Dart list sorting (e.g., songs.sort((a, b) => a.title.compareTo(b.title))) inside these methods.
+
+Add a filter button to your UI that calls this method and updates a ValueNotifier<List<Song>> libraryNotifier to refresh the screen.
+
+Step 6: Swap to SQLite (Future Goal)
+
+Add the sqflite package (the standard native SQLite plugin for Flutter).
+
+Create lib/data/database_helper.dart to initialize the database file and execute your CREATE TABLE statements for songs and playlists.
+
+Go back to SongRepository. Replace the hardcoded Dart lists with SQL queries (e.g., db.query('songs', orderBy: 'title ASC')) and map the results using Song.fromMap().
+
+Because you decoupled the repository in Step 4, your UI code requires absolutely zero changes during this step.
