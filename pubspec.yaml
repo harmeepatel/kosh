@@ -1,6 +1,6 @@
 name: kosh
 description: "Offline only music player."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
@@ -18,14 +18,21 @@ dependencies:
   path_provider: ^2.1.0
   flutter_taglib: ^1.5.2
   figma_squircle: ^0.6.3
+  flutter_marquee_plus: ^2.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
   assets:
     - assets/noise.png
-    - assets/shaders/glass_texture.frag
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/icons/icon.png"

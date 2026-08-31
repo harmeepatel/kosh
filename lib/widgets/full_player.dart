@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
-import 'package:kosh/widgets/album_art.dart';
 import 'package:kosh/widgets/song_info.dart';
 
-const _horizontalPadding = AppSpacing.xl;
+const horizontalPadding = AppSpacing.lg;
 
 class FullPlayer extends StatelessWidget {
   const FullPlayer({super.key});
@@ -26,7 +25,10 @@ class FullPlayer extends StatelessWidget {
                   children: [
                     Padding(
                       padding: EdgeInsets.only(
-                        bottom: MediaQuery.paddingOf(context).top * 1.5,
+                        bottom:
+                            horizontalPadding +
+                            // NOTE: idk where this number below comes from! there must be some calculation error somewhere.
+                            12,
                       ),
 
                       child: Container(
@@ -53,18 +55,10 @@ class FullPlayer extends StatelessWidget {
                     ),
 
                     _PlaybackProgress(mediaType: song?.format),
+
                     const _PlaybackControls(),
                     const _VolumeControls(),
                     const _BottomActions(),
-
-                    Text(
-                      "HP's APP 3",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -82,29 +76,9 @@ class _AlbumArtCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-      child: AlbumArt(
-        radius: AppRadii.lg,
-        imageBytes: albumArtData,
-        customFallback: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xffd5c0b7), Color(0xff735f5b)],
-            ),
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.music_note_rounded,
-              color: Colors.white54,
-              size: 100,
-            ),
-          ),
-        ),
-      ),
-    );
+    final size = MediaQuery.sizeOf(context).width - (horizontalPadding * 1.2);
+
+    return SizedBox(width: size, height: size);
   }
 }
 
@@ -118,7 +92,7 @@ class _SongDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: _horizontalPadding,
+        horizontal: horizontalPadding,
         vertical: AppSpacing.lg,
       ),
       child: Row(
@@ -166,7 +140,7 @@ class _PlaybackProgress extends StatelessWidget {
   const _PlaybackProgress({this.mediaType});
   static const _secondaryText = TextStyle(
     color: Colors.white54,
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
   );
 
@@ -176,7 +150,7 @@ class _PlaybackProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final localMediaType = mediaType;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+      padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         children: [
           SliderTheme(
@@ -187,52 +161,51 @@ class _PlaybackProgress extends StatelessWidget {
               activeTrackColor: Colors.white70,
               inactiveTrackColor: Colors.white24,
             ),
-            child: Slider(value: 0.23, onChanged: (_) {}),
+            child: Slider(value: 0.2, onChanged: (_) {}),
           ),
           if (localMediaType != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('0:58', style: _secondaryText),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 6,
-                    ),
-                    decoration: ShapeDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      shape: SmoothRectangleBorder(
-                        borderRadius: SmoothBorderRadius(
-                          cornerRadius: AppRadii.md,
-                          cornerSmoothing: AppRadii.cornerSmoothing,
-                        ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('0:58', style: _secondaryText),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xs5,
+                    vertical: AppSpacing.xs6,
+                  ),
+                  decoration: ShapeDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    shape: SmoothRectangleBorder(
+                      borderRadius: SmoothBorderRadius(
+                        cornerRadius: AppRadii.xs,
+                        cornerSmoothing: AppRadii.cornerSmoothing,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.graphic_eq_rounded,
-                          color: Colors.white70,
-                          size: 19,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          localMediaType,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                  const Text('-3:23', style: _secondaryText),
-                ],
-              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.graphic_eq_rounded,
+                        color: Colors.white70,
+                        size: 9,
+                      ),
+                      SizedBox(width: AppSpacing.xs5),
+                      Text(
+                        localMediaType,
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Text('-3:23', style: _secondaryText),
+              ],
             ),
         ],
       ),
@@ -275,21 +248,23 @@ class _VolumeControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double iconSize = 28;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+      padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Row(
         children: [
           const Icon(
             Icons.volume_mute_rounded,
             color: Colors.white70,
-            size: 25,
+            size: iconSize,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: SliderTheme(
               data: SliderTheme.of(context).copyWith(
-                trackHeight: 7,
+                trackHeight: 6,
                 thumbShape: SliderComponentShape.noThumb,
+                tickMarkShape: SliderTickMarkShape.noTickMark,
                 overlayShape: SliderComponentShape.noOverlay,
                 activeTrackColor: Colors.white70,
                 inactiveTrackColor: Colors.white24,
@@ -298,7 +273,11 @@ class _VolumeControls extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Icon(Icons.volume_up_rounded, color: Colors.white70, size: 27),
+          const Icon(
+            Icons.volume_up_rounded,
+            color: Colors.white70,
+            size: iconSize,
+          ),
         ],
       ),
     );
@@ -310,6 +289,7 @@ class _BottomActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double size = 24;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -318,7 +298,7 @@ class _BottomActions extends StatelessWidget {
           icon: const Icon(
             Icons.chat_bubble_outline_rounded,
             color: Colors.white70,
-            size: 31,
+            size: size,
           ),
         ),
         IconButton(
@@ -326,7 +306,7 @@ class _BottomActions extends StatelessWidget {
           icon: const Icon(
             Icons.headphones_rounded,
             color: Colors.white70,
-            size: 32,
+            size: size,
           ),
         ),
         IconButton(
@@ -334,7 +314,7 @@ class _BottomActions extends StatelessWidget {
           icon: const Icon(
             Icons.queue_music_rounded,
             color: Colors.white70,
-            size: 32,
+            size: size,
           ),
         ),
       ],

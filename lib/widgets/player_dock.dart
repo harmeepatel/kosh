@@ -1,7 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:kosh/player/song.dart';
+import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
+import 'package:kosh/widgets/album_art.dart';
 import 'package:kosh/widgets/frosted_glass.dart';
 import 'mini_player_content.dart';
 import 'full_player.dart';
@@ -153,6 +156,7 @@ class _PlayerDockState extends State<PlayerDock>
     final screen = MediaQuery.sizeOf(context);
     final actualNavHeight = AppInset.bottomNavHeightWithPad(context);
     final bottomMargin = AppInset.bottomMargin(context);
+    final topSafeArea = MediaQuery.paddingOf(context).top;
 
     return ValueListenableBuilder<bool>(
       valueListenable: widget.isBottomBarVisibleNotifier,
@@ -165,6 +169,7 @@ class _PlayerDockState extends State<PlayerDock>
             return AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {
+                final t = _controller.value;
                 final pill = _getPillRect(
                   screen,
                   actualNavHeight,
@@ -172,10 +177,38 @@ class _PlayerDockState extends State<PlayerDock>
                   bottomMargin,
                 );
                 final layout = _calculateLayout(
-                  t: _controller.value,
+                  t: t,
                   pill: pill,
                   screen: screen,
                 );
+
+                // --- ALBUM ART RECT CALCULATION ---
+                // 1. Miniplayer cover rect relative to dock inner bounds
+                const miniArtSize = AppAlbumCoverSize.xs;
+                final miniArtTop = (pill.height - miniArtSize) / 2;
+                const miniArtLeft = AppSpacing.lg;
+                final miniArtRect = Rect.fromLTWH(
+                  miniArtLeft,
+                  miniArtTop,
+                  miniArtSize,
+                  miniArtSize,
+                );
+
+                // 2. FullPlayer cover rect relative to sheet layout top
+                final fullArtSize = screen.width - (horizontalPadding * 2);
+                final topHandleHeight =
+                    (topSafeArea * 1.2) + (AppGeometry.borderWidth * 4);
+                final fullArtTop = topSafeArea + topHandleHeight;
+                final fullArtRect = Rect.fromLTWH(
+                  horizontalPadding,
+                  fullArtTop,
+                  fullArtSize,
+                  fullArtSize,
+                );
+
+                // 3. Continuous interpolation based on gesture controller progress
+                final currentArtRect = Rect.lerp(miniArtRect, fullArtRect, t)!;
+                final currentRadius = lerpDouble(AppRadii.xs, AppRadii.lg, t)!;
 
                 return Positioned.fromRect(
                   rect: layout.rect,
@@ -188,7 +221,6 @@ class _PlayerDockState extends State<PlayerDock>
                     child: FrostedGlassShell(
                       radius: layout.radius,
                       borderAlpha: layout.borderAlpha,
-
                       child: Stack(
                         children: [
                           Align(
@@ -221,6 +253,21 @@ class _PlayerDockState extends State<PlayerDock>
                                   child: const FullPlayer(),
                                 ),
                               ),
+                            ),
+                          ),
+
+                          // Floating continuous scaling album art
+                          Positioned.fromRect(
+                            rect: currentArtRect,
+                            child: ValueListenableBuilder<Song?>(
+                              valueListenable: PlayerState.currentSong,
+                              builder: (context, song, _) {
+                                return AlbumArt(
+                                  radius: currentRadius,
+                                  imageBytes: song?.albumArt,
+                                  fallbackIconColor: Colors.white54,
+                                );
+                              },
                             ),
                           ),
                         ],

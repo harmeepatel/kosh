@@ -38,7 +38,7 @@ class SongInfo extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: titleStyle,
         ),
-        SizedBox(height: spacing),
+
         Row(
           children: [
             Text(
@@ -53,10 +53,10 @@ class SongInfo extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(
                   vertical: AppSpacing.xs6,
-                  horizontal: AppSpacing.xs4,
+                  horizontal: AppSpacing.xs5,
                 ),
                 decoration: ShapeDecoration(
-                  color: Color(0xff202020),
+                  color: Color(0xff141312),
                   shape: SmoothRectangleBorder(
                     borderRadius: SmoothBorderRadius(cornerRadius: AppRadii.xs),
                   ),
@@ -67,12 +67,9 @@ class SongInfo extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: artistStyle.fontSize != null
-                        ? artistStyle.fontSize! /
-                              (AppGeometry.goldenRatio *
-                                  AppGeometry.goldenRatio)
-                        : 8,
+                    color: Colors.white30,
+                    fontSize: 7.5,
+                    fontWeight: .w600,
                   ),
                 ),
               ),
@@ -81,5 +78,75 @@ class SongInfo extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+// Source - https://stackoverflow.com/a/51776987
+// Posted by leodriesch, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-08-30, License - CC BY-SA 4.0
+
+class MarqueeWidget extends StatefulWidget {
+  final Widget child;
+  final Axis direction;
+  final Duration animationDuration, backDuration, pauseDuration;
+
+  const MarqueeWidget({
+    Key? key,
+    required this.child,
+    this.direction = Axis.horizontal,
+    this.animationDuration = const Duration(milliseconds: 6000),
+    this.backDuration = const Duration(milliseconds: 800),
+    this.pauseDuration = const Duration(milliseconds: 800),
+  }) : super(key: key);
+
+  @override
+  _MarqueeWidgetState createState() => _MarqueeWidgetState();
+}
+
+class _MarqueeWidgetState extends State<MarqueeWidget> {
+  late ScrollController scrollController;
+
+  @override
+  void initState() {
+    scrollController = ScrollController(initialScrollOffset: 50.0);
+    WidgetsBinding.instance.addPostFrameCallback(scroll);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
+      child: widget.child,
+      scrollDirection: widget.direction,
+      controller: scrollController,
+    );
+  }
+
+  void scroll(_) async {
+    while (scrollController.hasClients) {
+      await Future.delayed(widget.pauseDuration);
+      if (scrollController.hasClients) {
+        await scrollController.animateTo(
+          scrollController.position.maxScrollExtent,
+          duration: widget.animationDuration,
+          curve: Curves.ease,
+        );
+      }
+      await Future.delayed(widget.pauseDuration);
+      if (scrollController.hasClients) {
+        await scrollController.animateTo(
+          0.0,
+          duration: widget.backDuration,
+          curve: Curves.easeOut,
+        );
+      }
+    }
   }
 }

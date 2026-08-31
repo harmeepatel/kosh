@@ -25,8 +25,7 @@ class AlbumArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget content;
-
+    final Widget content;
     if (imageBytes != null) {
       content = Image.memory(imageBytes!, fit: BoxFit.cover);
     } else if (imageProvider != null) {
@@ -37,9 +36,17 @@ class AlbumArt extends StatelessWidget {
       content = Center(child: Icon(Icons.music_note, color: fallbackIconColor));
     }
 
-    return SizedBox(
+    final borderRadius = SmoothBorderRadius(
+      cornerRadius: radius,
+      cornerSmoothing: AppRadii.cornerSmoothing,
+    );
+
+    return Container(
       width: size,
       height: size,
+      decoration: ShapeDecoration(
+        shape: SmoothRectangleBorder(borderRadius: borderRadius),
+      ),
       child: AspectRatio(
         aspectRatio: 1,
         child: Container(
@@ -47,17 +54,14 @@ class AlbumArt extends StatelessWidget {
           decoration: ShapeDecoration(
             color: fallbackColor ?? AppColors.albumPlaceholder,
             shape: SmoothRectangleBorder(
-              borderRadius: SmoothBorderRadius(
-                cornerRadius: radius,
-                cornerSmoothing: AppRadii.cornerSmoothing,
-              ),
+              side: const BorderSide(color: Colors.white12, width: 0.1),
+              borderRadius: borderRadius,
             ),
             shadows: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.5),
-                spreadRadius: 4,
-                blurRadius: 32,
-                offset: const Offset(0, 0),
+                color: Colors.black.withValues(alpha: 0.2),
+                spreadRadius: radius / 2,
+                blurRadius: radius * 2,
               ),
             ],
           ),

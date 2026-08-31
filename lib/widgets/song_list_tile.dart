@@ -31,7 +31,9 @@ class SongListTile extends StatelessWidget {
               imageBytes: song.albumArt,
               fallbackColor: fallbackColor,
             ),
+
             const SizedBox(width: AppSpacing.md),
+
             Expanded(
               child: SongInfo(
                 title: song.title,
@@ -42,7 +44,9 @@ class SongListTile extends StatelessWidget {
                 spacing: AppSpacing.xs3,
               ),
             ),
+
             const SizedBox(width: AppSpacing.md),
+
             const Icon(Icons.more_horiz, color: Colors.grey),
           ],
         ),

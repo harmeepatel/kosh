@@ -42,62 +42,8 @@
     {
       "layers" : [
         {
-          "image-name" : "needle.svg",
-          "name" : "needle",
-          "opacity-specializations" : [
-            {
-              "appearance" : "tinted",
-              "value" : 0.5
-            }
-          ],
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              -300,
-              -104
-            ]
-          }
-        },
-        {
-          "image-name" : "volume.svg",
-          "name" : "volume",
-          "opacity-specializations" : [
-            {
-              "appearance" : "tinted",
-              "value" : 0.5
-            }
-          ],
-          "position" : {
-            "scale" : 0.8,
-            "translation-in-points" : [
-              360,
-              360
-            ]
-          }
-        },
-        {
-          "blend-mode-specializations" : [
-            {
-              "appearance" : "dark",
-              "value" : "normal"
-            },
-            {
-              "appearance" : "tinted",
-              "value" : "normal"
-            }
-          ],
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "record.svg",
-          "name" : "record",
-          "opacity" : 1,
-          "position" : {
-            "scale" : 1.1300000000000001,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          "image-name" : "disk.svg",
+          "name" : "disk"
         }
       ],
       "shadow" : {

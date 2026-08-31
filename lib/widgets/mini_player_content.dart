@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
-import 'package:kosh/widgets/album_art.dart';
 import 'package:kosh/widgets/song_info.dart';
 
 class MiniPlayerContent extends StatelessWidget {
@@ -20,21 +19,19 @@ class MiniPlayerContent extends StatelessWidget {
           vertical: AppSpacing.xs2,
           horizontal: AppSpacing.lg,
         ),
-
         child: ValueListenableBuilder<Song?>(
           valueListenable: PlayerState.currentSong,
           builder: (context, song, _) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
-
               children: [
-                AlbumArt(
-                  size: AppAlbumCoverSize.xs,
-                  radius: AppRadii.xs,
-                  imageBytes: song?.albumArt,
-                  fallbackIconColor: Colors.white54,
+                // Placeholder to preserve layout width and spacing
+                const SizedBox(
+                  width: AppAlbumCoverSize.xs,
+                  height: AppAlbumCoverSize.xs,
                 ),
-                const SizedBox(width: AppSpacing.sm),
+
+                const SizedBox(width: AppSpacing.md),
 
                 Expanded(
                   child: SongInfo(

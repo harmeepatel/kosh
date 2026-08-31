@@ -42,7 +42,7 @@ class AppGeometry {
 class AppInset {
   AppInset._();
 
-  static const double screenEdgePadding = AppSpacing.md;
+  static const double screenEdgePadding = AppSpacing.sm;
   static const double listSeparatorLeft =
       screenEdgePadding + AppAlbumCoverSize.sm + AppSpacing.md;
 
@@ -74,9 +74,9 @@ class AppInset {
 
 class AppTiming {
   AppTiming._();
-  static const Duration sm = Duration(milliseconds: 100);
-  static const Duration md = Duration(milliseconds: 200);
-  static const Duration lg = Duration(milliseconds: 300);
+  static const Duration sm = Duration(milliseconds: 120);
+  static const Duration md = Duration(milliseconds: 240);
+  static const Duration lg = Duration(milliseconds: 360);
 }
 
 class AppBlur {
@@ -109,8 +109,8 @@ class AppAlbumCoverSize {
 class AppColors {
   AppColors._();
   static const Color background = Colors.black;
-  static const Color primaryText = Colors.white;
-  static final Color secondaryText = Colors.grey.shade400;
+  static const Color primaryText = Color(0xfffdfdfd);
+  static final Color secondaryText = Colors.grey.shade500;
   static final Color albumPlaceholder = Colors.grey.shade800;
   static const Color divider = Colors.white12;
 }
@@ -124,11 +124,11 @@ class AppTextStyles {
   );
   static const TextStyle listTitle = TextStyle(
     color: AppColors.primaryText,
-    fontWeight: FontWeight.w600,
     fontSize: 16,
   );
   static TextStyle listArtist = TextStyle(
     color: AppColors.secondaryText,
-    fontSize: 14,
+    fontWeight: .w200,
+    fontSize: 12,
   );
 }
