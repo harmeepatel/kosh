@@ -88,7 +88,7 @@ class AppIcon {
   AppIcon._();
   static const double xs = sm / AppGeometry.ratio;
   static const double sm = md / AppGeometry.ratio;
-  static const double md = 36;
+  static const double md = 40;
   static const double lg = md * AppGeometry.ratio;
   static const double xl = lg * AppGeometry.ratio;
 }

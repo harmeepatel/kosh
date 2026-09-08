@@ -44,26 +44,38 @@ class AlbumArt extends StatelessWidget {
       height: size,
       child: AspectRatio(
         aspectRatio: 1,
-        child: ClipSmoothRect(
-          radius: borderRadius,
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            decoration: ShapeDecoration(
-              color: AppColors.albumPlaceholder,
-              shape: SmoothRectangleBorder(borderRadius: borderRadius),
-            ),
-            foregroundDecoration: showBorder
-                ? ShapeDecoration(
-                    shape: SmoothRectangleBorder(
-                      side: BorderSide(
-                        color: Colors.white24,
-                        width: AppGeometry.borderWidth / pow(AppGeometry.ratio, 2),
+        child: Container(
+          decoration: ShapeDecoration(
+            shadows: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: radius,
+                spreadRadius: radius / AppGeometry.ratio,
+              ),
+            ],
+            shape: SmoothRectangleBorder(borderRadius: borderRadius),
+          ),
+          child: ClipSmoothRect(
+            radius: borderRadius,
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: ShapeDecoration(
+                color: AppColors.albumPlaceholder,
+                shape: SmoothRectangleBorder(borderRadius: borderRadius),
+              ),
+              foregroundDecoration: showBorder
+                  ? ShapeDecoration(
+                      shape: SmoothRectangleBorder(
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          width: (AppGeometry.borderWidth * 2) / pow(AppGeometry.ratio, 2),
+                        ),
+                        borderRadius: borderRadius,
                       ),
-                      borderRadius: borderRadius,
-                    ),
-                  )
-                : null,
-            child: content,
+                    )
+                  : null,
+              child: content,
+            ),
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
 import 'package:flutter_taglib/flutter_taglib.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/style/style.dart';
@@ -207,7 +208,7 @@ class _SongListViewState extends State<SongListView> {
 
           if (snapshot.hasError && !snapshot.hasData) {
             return _CenteredMessage(
-              icon: Icons.error_outline_rounded,
+              icon: SFSymbols.waveform_badge_xmark,
               text: 'Could not load songs.\n${snapshot.error}',
             );
           }
@@ -235,7 +236,7 @@ class _SongListViewState extends State<SongListView> {
 
               if (songs.isEmpty && snapshot.connectionState == ConnectionState.done)
                 const SliverFillRemaining(
-                  child: _CenteredMessage(icon: Icons.music_off_rounded, text: 'No Songs...'),
+                  child: _CenteredMessage(icon: SFSymbols.music_note_slash, text: 'No Songs...'),
                 )
               else
                 SliverPadding(

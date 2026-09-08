@@ -42,8 +42,32 @@
     {
       "layers" : [
         {
-          "image-name" : "disk.svg",
-          "name" : "disk"
+          "image-name" : "mid-2.svg",
+          "name" : "mid-2"
+        },
+        {
+          "image-name" : "inner.svg",
+          "name" : "inner"
+        },
+        {
+          "image-name" : "mid-1.svg",
+          "name" : "mid-1"
+        },
+        {
+          "image-name" : "mid.svg",
+          "name" : "mid"
+        },
+        {
+          "image-name" : "track 3.svg",
+          "name" : "track 3"
+        },
+        {
+          "image-name" : "track 2.svg",
+          "name" : "track 2"
+        },
+        {
+          "image-name" : "track 1.svg",
+          "name" : "track 1"
         }
       ],
       "shadow" : {

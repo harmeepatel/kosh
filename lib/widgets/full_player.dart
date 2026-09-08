@@ -93,13 +93,13 @@ class _SongDetails extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: AppAlbumCover.xs, minHeight: AppAlbumCover.xs),
             onPressed: () {},
-            icon: const Icon(Icons.star_border_rounded, color: Colors.white, size: AppIcon.md),
+            icon: const Icon(SFSymbols.suit_heart, color: Colors.white, size: AppIcon.md),
           ),
           IconButton(
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: AppAlbumCover.xs, minHeight: AppAlbumCover.xs),
             onPressed: () {},
-            icon: const Icon(Icons.more_horiz_rounded, color: Colors.white, size: AppIcon.md),
+            icon: const Icon(SFSymbols.ellipsis, color: Colors.white, size: AppIcon.md),
           ),
         ],
       ),
@@ -246,15 +246,15 @@ class _BottomActions extends StatelessWidget {
       children: [
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.chat_bubble_outline_rounded, color: Colors.white70, size: size),
+          icon: const Icon(SFSymbols.text_bubble, color: Colors.white70, size: size),
         ),
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.headphones_rounded, color: Colors.white70, size: size),
+          icon: const Icon(SFSymbols.airpodspro, color: Colors.white70, size: size),
         ),
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.queue_music_rounded, color: Colors.white70, size: size),
+          icon: const Icon(SFSymbols.list_bullet, color: Colors.white70, size: size),
         ),
       ],
     );
