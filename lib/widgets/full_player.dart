@@ -150,13 +150,13 @@ class _PlaybackProgress extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.graphic_eq_rounded, color: Colors.white70, size: AppRadii.md),
+                      const Icon(SFSymbols.waveform, color: Colors.white70, size: AppRadii.md),
                       const SizedBox(width: AppSpacing.xs5),
                       Text(
                         localMediaType,
                         style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: AppSpacing.xs3,
+                          fontSize: AppSpacing.xs2,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -212,7 +212,7 @@ class _VolumeControls extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Row(
         children: [
-          const Icon(Icons.volume_mute_rounded, color: Colors.white70, size: iconSize),
+          const Icon(SFSymbols.speaker_fill, color: Colors.white70, size: iconSize),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: SliderTheme(
@@ -228,7 +228,7 @@ class _VolumeControls extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          const Icon(Icons.volume_up_rounded, color: Colors.white70, size: iconSize),
+          const Icon(SFSymbols.speaker_wave_3_fill, color: Colors.white70, size: iconSize),
         ],
       ),
     );

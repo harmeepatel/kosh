@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
@@ -35,7 +36,7 @@ class SongListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              const Icon(Icons.more_horiz, color: Colors.grey),
+              const Icon(SFSymbols.ellipsis, color: Colors.grey),
             ],
           ),
         ),

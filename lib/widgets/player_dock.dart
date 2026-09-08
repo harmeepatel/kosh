@@ -23,26 +23,6 @@ class PlayerDock extends StatefulWidget {
 class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
   static const double _draggableDistance = 0.7;
 
-  // /// Controls only the vertical open/closed position.
-  // late final AnimationController _position = AnimationController(
-  //   vsync: this,
-  //   duration: AppTiming.lg,
-  //   value: widget.isOpenNotifier.value ? 1.0 : 0.0,
-  // );
-  //
-  // /// Controls the visual transformation between full player and mini player.
-  // ///
-  // /// Keeping this separate from [_position] lets the full player
-  // /// move vertically during a downward drag without shrinking horizontally.
-  // late final AnimationController _morph = AnimationController(
-  //   vsync: this,
-  //   duration: AppTiming.lg,
-  //   value: widget.isOpenNotifier.value ? 1.0 : 0.0,
-  // );
-  //
-  // bool _isDragging = false;
-  // bool _dragStartedOpen = false;
-
   late final AnimationController _position = AnimationController(
     vsync: this,
     duration: AppTiming.lg,

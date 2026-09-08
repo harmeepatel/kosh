@@ -2,6 +2,7 @@ import 'dart:math' show pow;
 import 'dart:typed_data';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
 import 'package:kosh/style/style.dart';
 
 class AlbumArt extends StatelessWidget {
@@ -34,7 +35,7 @@ class AlbumArt extends StatelessWidget {
     } else if (customFallback != null) {
       content = customFallback!;
     } else {
-      content = Center(child: Icon(Icons.music_note, color: fallbackIconColor));
+      content = Center(child: Icon(SFSymbols.music_note, color: fallbackIconColor));
     }
 
     final borderRadius = SmoothBorderRadius(cornerRadius: radius, cornerSmoothing: AppRadii.cornerSmoothing);
