@@ -6,12 +6,7 @@ import 'package:inspire_blur/inspire_blur.dart';
 import 'package:kosh/style/style.dart';
 
 class TopBar extends StatelessWidget {
-  const TopBar({
-    super.key,
-    required this.scrollOffset,
-    this.title,
-    this.children,
-  });
+  const TopBar({super.key, required this.scrollOffset, this.title, this.children});
 
   final ValueListenable<double> scrollOffset;
   final Widget? title;
@@ -31,11 +26,7 @@ class TopBar extends StatelessWidget {
           return Stack(
             children: [
               _BlurLayer(progress: progress),
-              _TopBarContent(
-                progress: progress,
-                title: title,
-                actions: children,
-              ),
+              _TopBarContent(progress: progress, title: title, actions: children),
             ],
           );
         },
@@ -53,9 +44,7 @@ class _BlurLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     final sigma = AppBlur.lg * progress;
 
-    return Inspire.backdropBlur(
-      config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.1),
-    );
+    return Inspire.backdropBlur(config: InspireBlurConfig.topToBottom(sigma: sigma, extent: 1.1));
   }
 }
 
@@ -75,23 +64,16 @@ class _TopBarContent extends StatelessWidget {
     final titleScale = lerpDouble(1, 0, progress)!;
 
     return SafeArea(
+      bottom: false,
       child: SizedBox(
         height: AppGeometry.topBarHeight,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppInset.screenEdgePadding,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppInset.screenEdgePadding),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (title != null)
-                Transform.scale(
-                  scale: titleScale,
-                  alignment: Alignment.centerLeft,
-                  child: title,
-                ),
-              if (actions != null)
-                Row(mainAxisSize: MainAxisSize.min, children: actions!),
+              if (title != null) Transform.scale(scale: titleScale, alignment: Alignment.topLeft, child: title),
+              if (actions != null) Row(mainAxisSize: MainAxisSize.min, children: actions!),
             ],
           ),
         ),

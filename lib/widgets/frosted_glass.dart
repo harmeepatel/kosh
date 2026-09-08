@@ -9,7 +9,7 @@ class FrostedGlassShell extends StatelessWidget {
     required this.radius,
     required this.child,
     this.borderAlpha = AppGeometry.borderOpacity,
-    this.blurSigma = AppBlur.md,
+    this.blurSigma = AppBlur.sm,
     this.grainOpacity = 0.1,
   });
 
@@ -23,10 +23,7 @@ class FrostedGlassShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = SmoothBorderRadius(
-      cornerRadius: radius,
-      cornerSmoothing: AppRadii.cornerSmoothing,
-    );
+    final borderRadius = SmoothBorderRadius(cornerRadius: radius, cornerSmoothing: AppRadii.cornerSmoothing);
 
     return ClipSmoothRect(
       clipBehavior: Clip.antiAlias,
@@ -34,12 +31,18 @@ class FrostedGlassShell extends StatelessWidget {
       child: Stack(
         fit: StackFit.passthrough,
         children: [
+          // 1. ISOLATED BACKDROP BLUR LAYER
+          // Keeps the GPU blur cached as long as the background behind it hasn't moved
           Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-              child: const SizedBox.shrink(),
+            child: RepaintBoundary(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                child: const SizedBox.shrink(),
+              ),
             ),
           ),
+
+          // 2. Noise Overlay
           Positioned.fill(
             child: Opacity(
               opacity: grainOpacity,
@@ -51,6 +54,9 @@ class FrostedGlassShell extends StatelessWidget {
               ),
             ),
           ),
+
+          // 3. ISOLATED FOREGROUND CHILD
+          // Repaints here will no longer invalidate the BackdropFilter layer beneath it
           Container(
             decoration: BoxDecoration(
               color: backgroundColor,
@@ -62,7 +68,7 @@ class FrostedGlassShell extends StatelessWidget {
                     )
                   : null,
             ),
-            child: child,
+            child: RepaintBoundary(child: child),
           ),
         ],
       ),

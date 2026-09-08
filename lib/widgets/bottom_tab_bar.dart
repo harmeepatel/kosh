@@ -1,6 +1,3 @@
-import 'dart:ui';
-import 'package:figma_squircle/figma_squircle.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kosh/style/style.dart';
@@ -8,6 +5,7 @@ import 'package:kosh/widgets/frosted_glass.dart';
 
 class NavTab {
   const NavTab({required this.icon, required this.label});
+
   final IconData icon;
   final String label;
 }
@@ -15,265 +13,153 @@ class NavTab {
 class BottomTabBar extends StatefulWidget {
   const BottomTabBar({
     super.key,
-    required this.isVisibleNotifier,
     required this.tabs,
-    required this.selectedIndex,
+    required this.searchIndex,
     required this.onTap,
-  });
+    this.isLeftHanded = false,
+  }) : assert(searchIndex >= 0 && searchIndex < tabs.length);
 
   final List<NavTab> tabs;
-  final int selectedIndex;
-  final ValueListenable<bool> isVisibleNotifier;
+  final int searchIndex;
   final ValueChanged<int> onTap;
+  final bool isLeftHanded;
 
   @override
   State<BottomTabBar> createState() => _BottomTabBarState();
 }
 
 class _BottomTabBarState extends State<BottomTabBar> {
-  static const _tabWidth = AppAlbumCoverSize.xs * AppGeometry.goldenRatio;
-  static const _blobWidth = 200.0;
-
-  static final _blobBlurFilter = ImageFilter.blur(
-    sigmaX: AppBlur.md,
-    sigmaY: AppBlur.md,
-  );
+  static const double _tabSize = AppAlbumCover.sm;
 
   int? _previewIndex;
-  final ValueNotifier<double> _blobPosition = ValueNotifier(0.0);
-  final ValueNotifier<bool> _isInteracting = ValueNotifier(false);
 
-  @override
-  void dispose() {
-    _blobPosition.dispose();
-    _isInteracting.dispose();
-    super.dispose();
-  }
+  bool get _isExpanded => _previewIndex != null;
 
-  int get _activeIndex => _previewIndex ?? widget.selectedIndex;
+  double get _expandedHeight => widget.tabs.length * _tabSize;
 
-  double _calculateBlobDx(double localDx) {
-    return localDx + AppSpacing.xs - (_blobWidth / 2);
-  }
+  List<int> get _orderedIndices => [
+    for (var i = 0; i < widget.tabs.length; i++)
+      if (i != widget.searchIndex) i,
+    widget.searchIndex,
+  ];
 
-  void _updateInteraction(Offset localPosition) {
-    final index = _indexForPosition(localPosition.dx);
-    _isInteracting.value = true;
-    _blobPosition.value = _calculateBlobDx(localPosition.dx);
+  void _expand() {
+    if (_isExpanded) return;
 
-    if (_previewIndex != index) {
-      HapticFeedback.lightImpact();
-      setState(() {
-        _previewIndex = index;
-      });
-    }
-  }
-
-  void _startInteraction(Offset localPosition) {
     setState(() {
-      _isInteracting.value = true;
-      _blobPosition.value = _calculateBlobDx(localPosition.dx);
+      _previewIndex = widget.searchIndex;
     });
   }
 
-  int _indexForPosition(double localDx) {
-    final index = (localDx / _tabWidth).floor();
-    return index.clamp(0, widget.tabs.length - 1);
-  }
+  void _collapse() {
+    if (!_isExpanded) return;
 
-  void _commitInteraction() {
-    final index = _previewIndex;
-    if (index != null) {
-      widget.onTap(index);
-    }
-    _endInteraction();
-  }
-
-  void _endInteraction() {
     setState(() {
       _previewIndex = null;
-      _isInteracting.value = false;
     });
   }
 
-  void _handleTapUp(TapUpDetails details) {
-    _updateInteraction(details.localPosition);
-    _commitInteraction();
+  void _updatePreview(Offset globalPosition) {
+    final indices = _orderedIndices;
+
+    final dockBottom = MediaQuery.sizeOf(context).height - AppInset.bottomMargin(context);
+
+    final distanceFromBottom = (dockBottom - globalPosition.dy).clamp(0.0, _expandedHeight - 0.001);
+
+    final slotFromBottom = (distanceFromBottom / _tabSize).floor();
+    final index = indices[indices.length - 1 - slotFromBottom];
+
+    if (_previewIndex == index) return;
+
+    HapticFeedback.selectionClick();
+
+    setState(() {
+      _previewIndex = index;
+    });
   }
 
-  void _expandNav() {
-    if (widget.isVisibleNotifier is ValueNotifier<bool>) {
-      (widget.isVisibleNotifier as ValueNotifier<bool>).value = true;
-    }
+  void _select(int index) {
+    widget.onTap(index);
+    _collapse();
+  }
+
+  void _onDragStart(DragStartDetails details) {
+    _expand();
+    _updatePreview(details.globalPosition);
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _updatePreview(details.globalPosition);
+  }
+
+  void _onDragEnd(DragEndDetails _) {
+    _select(_previewIndex ?? widget.searchIndex);
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final navHeight = AppAlbumCoverSize.sm;
-    final collapsedWidth = AppAlbumCoverSize.sm;
-    final expandedWidth =
-        (widget.tabs.length * _tabWidth) + (AppSpacing.sm * 2);
-    final expandedLeft = (screenWidth - expandedWidth) / 2;
-    final collapsedLeft = AppInset.screenEdgePadding;
-    final bottomMargin = AppInset.bottomMargin(context);
+    final activeIndex = _previewIndex ?? widget.searchIndex;
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: widget.isVisibleNotifier,
-      builder: (context, isVisible, _) {
-        return TweenAnimationBuilder<double>(
-          tween: Tween<double>(end: isVisible ? 1.0 : 0.0),
-          duration: AppTiming.md,
+    return Positioned(
+      left: widget.isLeftHanded ? AppInset.screenEdgePadding : null,
+      right: widget.isLeftHanded ? null : AppInset.screenEdgePadding,
+      bottom: AppInset.bottomMargin(context),
+      width: _tabSize,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _select(widget.searchIndex),
+        onVerticalDragStart: _onDragStart,
+        onVerticalDragUpdate: _onDragUpdate,
+        onVerticalDragEnd: _onDragEnd,
+        onVerticalDragCancel: _collapse,
+        child: AnimatedContainer(
+          duration: AppTiming.sm,
           curve: Curves.easeOutCubic,
-          builder: (context, progress, _) {
-            final currentWidth = lerpDouble(
-              collapsedWidth,
-              expandedWidth,
-              progress,
-            )!;
-            final currentLeft = lerpDouble(
-              collapsedLeft,
-              expandedLeft,
-              progress,
-            )!;
-
-            return Positioned(
-              left: currentLeft,
-              bottom: bottomMargin,
-              width: currentWidth,
-              height: navHeight,
-              child: GestureDetector(
-                onTap: isVisible ? null : _expandNav,
-                child: ClipSmoothRect(
-                  clipBehavior: Clip.antiAlias,
-                  radius: SmoothBorderRadius(
-                    cornerRadius: navHeight / 2,
-                    cornerSmoothing: AppRadii.cornerSmoothing,
-                  ),
-                  child: FrostedGlassShell(
-                    radius: navHeight / 2,
-                    child: Container(
-                      decoration: ShapeDecoration(
-                        shape: SmoothRectangleBorder(
-                          borderRadius: SmoothBorderRadius(
-                            cornerRadius: 10,
-                            cornerSmoothing: AppRadii.cornerSmoothing,
-                          ),
-                        ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Opacity(
-                            opacity: (1 - progress * 2).clamp(0.0, 1.0),
-                            child: _TabItem(
-                              tab: widget.tabs[_activeIndex],
-                              selected: true,
-                            ),
-                          ),
-                          Opacity(
-                            opacity: ((progress - 0.5) * 2).clamp(0.0, 1.0),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const NeverScrollableScrollPhysics(),
-                              child: SizedBox(
-                                width: expandedWidth,
-                                height: navHeight,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    _buildInteractionBlob(),
-                                    _buildTabs(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+          width: _tabSize,
+          height: _isExpanded ? _expandedHeight : _tabSize,
+          child: FrostedGlassShell(
+            radius: _tabSize / 2,
+            child: OverflowBox(
+              alignment: Alignment.bottomCenter,
+              minWidth: _tabSize,
+              maxWidth: _tabSize,
+              minHeight: _expandedHeight,
+              maxHeight: _expandedHeight,
+              child: SizedBox(
+                width: _tabSize,
+                height: _expandedHeight,
+                child: Column(
+                  children: [
+                    for (final index in _orderedIndices)
+                      _TabItem(tab: widget.tabs[index], selected: index == activeIndex),
+                  ],
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTabs() {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onHorizontalDragStart: (details) =>
-          _updateInteraction(details.localPosition),
-      onHorizontalDragUpdate: (details) =>
-          _updateInteraction(details.localPosition),
-      onHorizontalDragEnd: (_) => _commitInteraction(),
-      onHorizontalDragCancel: _endInteraction,
-      onTapDown: (details) => _startInteraction(details.localPosition),
-      onTapUp: _handleTapUp,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < widget.tabs.length; i++)
-            SizedBox(
-              width: _tabWidth,
-              child: _TabItem(tab: widget.tabs[i], selected: i == _activeIndex),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInteractionBlob() {
-    return ValueListenableBuilder<double>(
-      valueListenable: _blobPosition,
-      builder: (context, position, child) {
-        return Positioned(
-          top: 0,
-          bottom: 0,
-          left: position,
-          child: ValueListenableBuilder<bool>(
-            valueListenable: _isInteracting,
-            builder: (context, interacting, _) {
-              return AnimatedOpacity(
-                opacity: interacting ? 1 : 0,
-                duration: AppTiming.sm,
-                curve: Curves.easeInCubic,
-                child: ImageFiltered(
-                  imageFilter: _blobBlurFilter,
-                  child: Container(
-                    width: _blobWidth,
-                    height: _blobWidth,
-                    decoration: const BoxDecoration(
-                      color: Colors.white24,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              );
-            },
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
 class _TabItem extends StatelessWidget {
   const _TabItem({required this.tab, required this.selected});
+
   final NavTab tab;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      tab.icon,
-      color: selected
-          ? Colors.red.shade500.withValues(alpha: 0.8)
-          : Colors.white.withValues(alpha: 0.6),
-      size: AppAlbumCoverSize.xs,
+    return Semantics(
+      selected: selected,
+      label: tab.label,
+      child: SizedBox.square(
+        dimension: AppAlbumCover.sm,
+        child: Center(
+          child: Icon(tab.icon, size: AppIcon.sm, color: selected ? Colors.white : Colors.white54),
+        ),
+      ),
     );
   }
 }

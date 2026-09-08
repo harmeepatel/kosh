@@ -111,19 +111,14 @@ class SongLibrary {
     final status = await Permission.audio.request();
     if (!status.isGranted) throw StateError('Audio permission was denied');
 
-    final tracks = await OnAudioQuery().querySongs(
-      sortType: SongSortType.TITLE,
-      orderType: OrderType.ASC_OR_SMALLER,
-    );
+    final tracks = await OnAudioQuery().querySongs(sortType: SongSortType.TITLE, orderType: OrderType.ASC_OR_SMALLER);
     return tracks
         .where((t) => t.uri != null)
         .map(
           (t) => Song(
             id: t.id.toString(),
             title: t.title,
-            artist: (t.artist == null || t.artist == '<unknown>')
-                ? 'Unknown Artist'
-                : t.artist!,
+            artist: (t.artist == null || t.artist == '<unknown>') ? 'Unknown Artist' : t.artist!,
             album: t.album,
             filePath: t.uri!,
           ),
@@ -148,18 +143,15 @@ class SongLibrary {
   static Future<List<Song>> scanDirectory(Directory dir) async {
     if (!dir.existsSync()) return [];
 
-    final files = dir.listSync(recursive: true).whereType<File>().where((f) {
-      final isHidden = f.uri.pathSegments.any((s) => s.startsWith('.'));
-      return !isHidden && _audioExtensions.contains(_extensionOf(f.path));
-    });
-
     final songs = <Song>[];
-    for (final file in files) {
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      if (entity is! File) continue;
+      final isHidden = entity.uri.pathSegments.any((segment) => segment.startsWith('.'));
+      if (isHidden || !_audioExtensions.contains(_extensionOf(entity.path))) continue;
+      final file = entity;
       final metadata = AudioMetadataService.readMetadata(file.path);
       final fileName = file.uri.pathSegments.last;
-      final fallbackTitle = fileName.contains('.')
-          ? fileName.substring(0, fileName.lastIndexOf('.'))
-          : fileName;
+      final fallbackTitle = fileName.contains('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
 
       songs.add(
         Song(
@@ -177,8 +169,7 @@ class SongLibrary {
     return songs;
   }
 
-  static String _extensionOf(String path) =>
-      path.contains('.') ? path.split('.').last.toLowerCase() : '';
+  static String _extensionOf(String path) => path.contains('.') ? path.split('.').last.toLowerCase() : '';
 }
 
 // =============================================================================
@@ -195,10 +186,12 @@ class SongListView extends StatefulWidget {
 class _SongListViewState extends State<SongListView> {
   late Future<List<Song>> _future = SongLibrary.fetchAll();
 
-  void _reload() {
+  Future<void> _reload() async {
+    final future = SongLibrary.fetchAll();
     setState(() {
-      _future = SongLibrary.fetchAll();
+      _future = future;
     });
+    await future;
   }
 
   @override
@@ -208,11 +201,8 @@ class _SongListViewState extends State<SongListView> {
       body: FutureBuilder<List<Song>>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done &&
-              !snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.white54),
-            );
+          if (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: Colors.white54));
           }
 
           if (snapshot.hasError && !snapshot.hasData) {
@@ -225,49 +215,33 @@ class _SongListViewState extends State<SongListView> {
           final songs = snapshot.data ?? [];
 
           return CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
+            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             slivers: [
               CupertinoSliverRefreshControl(
-                onRefresh: () async => _reload(),
-                builder:
-                    (
+                onRefresh: _reload,
+                builder: (context, refreshState, pulledExtent, refreshTriggerPullDistance, refreshIndicatorExtent) {
+                  return Padding(
+                    padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top),
+                    child: CupertinoSliverRefreshControl.buildRefreshIndicator(
                       context,
                       refreshState,
                       pulledExtent,
                       refreshTriggerPullDistance,
                       refreshIndicatorExtent,
-                    ) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          top: MediaQuery.paddingOf(context).top,
-                        ),
-                        child:
-                            CupertinoSliverRefreshControl.buildRefreshIndicator(
-                              context,
-                              refreshState,
-                              pulledExtent,
-                              refreshTriggerPullDistance,
-                              refreshIndicatorExtent,
-                            ),
-                      );
-                    },
+                    ),
+                  );
+                },
               ),
 
-              if (songs.isEmpty &&
-                  snapshot.connectionState == ConnectionState.done)
+              if (songs.isEmpty && snapshot.connectionState == ConnectionState.done)
                 const SliverFillRemaining(
-                  child: _CenteredMessage(
-                    icon: Icons.music_off_rounded,
-                    text: 'No Songs...',
-                  ),
+                  child: _CenteredMessage(icon: Icons.music_off_rounded, text: 'No Songs...'),
                 )
               else
                 SliverPadding(
                   padding: EdgeInsets.only(
                     top: AppInset.topBarHeight(context),
-                    bottom: AppInset.totalBottomheight(context),
+                    bottom: AppInset.totalBottomHeight(context),
                   ),
                   sliver: SliverList.separated(
                     itemCount: songs.length,
@@ -310,9 +284,7 @@ class _CenteredMessage extends StatelessWidget {
             Text(
               text,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.primaryText.withValues(alpha: 0.6),
-              ),
+              style: TextStyle(color: AppColors.primaryText.withValues(alpha: 0.6)),
             ),
           ],
         ),

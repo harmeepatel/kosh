@@ -1,3 +1,4 @@
+import 'dart:math' show pow;
 import 'dart:typed_data';
 import 'package:figma_squircle/figma_squircle.dart';
 import 'package:flutter/material.dart';
@@ -10,18 +11,18 @@ class AlbumArt extends StatelessWidget {
     required this.radius,
     this.imageProvider,
     this.imageBytes,
-    this.fallbackColor,
     this.fallbackIconColor = Colors.white70,
     this.customFallback,
+    this.showBorder = true,
   });
 
   final double? size;
   final double radius;
   final ImageProvider? imageProvider;
   final Uint8List? imageBytes;
-  final Color? fallbackColor;
   final Color fallbackIconColor;
   final Widget? customFallback;
+  final bool showBorder;
 
   @override
   Widget build(BuildContext context) {
@@ -36,36 +37,34 @@ class AlbumArt extends StatelessWidget {
       content = Center(child: Icon(Icons.music_note, color: fallbackIconColor));
     }
 
-    final borderRadius = SmoothBorderRadius(
-      cornerRadius: radius,
-      cornerSmoothing: AppRadii.cornerSmoothing,
-    );
+    final borderRadius = SmoothBorderRadius(cornerRadius: radius, cornerSmoothing: AppRadii.cornerSmoothing);
 
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
-      decoration: ShapeDecoration(
-        shape: SmoothRectangleBorder(borderRadius: borderRadius),
-      ),
       child: AspectRatio(
         aspectRatio: 1,
-        child: Container(
+        child: ClipSmoothRect(
+          radius: borderRadius,
           clipBehavior: Clip.antiAlias,
-          decoration: ShapeDecoration(
-            color: fallbackColor ?? AppColors.albumPlaceholder,
-            shape: SmoothRectangleBorder(
-              side: const BorderSide(color: Colors.white12, width: 0.1),
-              borderRadius: borderRadius,
+          child: Container(
+            decoration: ShapeDecoration(
+              color: AppColors.albumPlaceholder,
+              shape: SmoothRectangleBorder(borderRadius: borderRadius),
             ),
-            shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                spreadRadius: radius / 2,
-                blurRadius: radius * 2,
-              ),
-            ],
+            foregroundDecoration: showBorder
+                ? ShapeDecoration(
+                    shape: SmoothRectangleBorder(
+                      side: BorderSide(
+                        color: Colors.white24,
+                        width: AppGeometry.borderWidth / pow(AppGeometry.ratio, 2),
+                      ),
+                      borderRadius: borderRadius,
+                    ),
+                  )
+                : null,
+            child: content,
           ),
-          child: content,
         ),
       ),
     );

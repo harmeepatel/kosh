@@ -1,37 +1,62 @@
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
 import 'package:kosh/widgets/album_art.dart';
 import 'package:kosh/widgets/frosted_glass.dart';
-import 'mini_player_content.dart';
-import 'full_player.dart';
+import 'package:kosh/widgets/full_player.dart';
+import 'package:kosh/widgets/mini_player_content.dart';
+import 'package:kosh/widgets/song_info.dart';
 
 class PlayerDock extends StatefulWidget {
-  const PlayerDock({
-    super.key,
-    required this.isOpenNotifier,
-    required this.isBottomBarVisibleNotifier,
-  });
+  const PlayerDock({super.key, required this.isOpenNotifier, this.isLeftHanded = false});
 
   final ValueNotifier<bool> isOpenNotifier;
-  final ValueListenable<bool> isBottomBarVisibleNotifier;
+  final bool isLeftHanded;
 
   @override
   State<PlayerDock> createState() => _PlayerDockState();
 }
 
-class _PlayerDockState extends State<PlayerDock>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
+  static const double _draggableDistance = 0.7;
+
+  // /// Controls only the vertical open/closed position.
+  // late final AnimationController _position = AnimationController(
+  //   vsync: this,
+  //   duration: AppTiming.lg,
+  //   value: widget.isOpenNotifier.value ? 1.0 : 0.0,
+  // );
+  //
+  // /// Controls the visual transformation between full player and mini player.
+  // ///
+  // /// Keeping this separate from [_position] lets the full player
+  // /// move vertically during a downward drag without shrinking horizontally.
+  // late final AnimationController _morph = AnimationController(
+  //   vsync: this,
+  //   duration: AppTiming.lg,
+  //   value: widget.isOpenNotifier.value ? 1.0 : 0.0,
+  // );
+  //
+  // bool _isDragging = false;
+  // bool _dragStartedOpen = false;
+
+  late final AnimationController _position = AnimationController(
     vsync: this,
     duration: AppTiming.lg,
     value: widget.isOpenNotifier.value ? 1.0 : 0.0,
   );
 
-  final double _draggableDistance = 0.7;
+  late final AnimationController _morph = AnimationController(
+    vsync: this,
+    duration: AppTiming.lg,
+    value: widget.isOpenNotifier.value ? 1.0 : 0.0,
+  );
+
+  bool _isDragging = false;
+  bool _holdFullSize = false;
 
   @override
   void initState() {
@@ -42,260 +67,297 @@ class _PlayerDockState extends State<PlayerDock>
   @override
   void dispose() {
     widget.isOpenNotifier.removeListener(_syncWithExternalState);
-    _controller.dispose();
+    _position.dispose();
+    _morph.dispose();
     super.dispose();
   }
 
   void _syncWithExternalState() {
-    if (_controller.isAnimating) return;
-    _controller.animateTo(
-      widget.isOpenNotifier.value ? 1.0 : 0.0,
-      curve: Curves.easeOutCubic,
-    );
+    if (_isDragging) return;
+    _animateTo(widget.isOpenNotifier.value);
   }
 
   void _onTap() {
-    if (_controller.value != 0) return;
+    if (_position.value > 0) return;
     widget.isOpenNotifier.value = true;
-    _controller.animateTo(1.0, curve: Curves.easeOutCubic);
   }
 
-  void _onDragStart(DragStartDetails details) {
-    _controller.stop();
+  void _onDragStart(DragStartDetails _) {
+    _position.stop();
+    _morph.stop();
+
+    _isDragging = true;
+    _holdFullSize = _morph.value > 0.5;
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final travelDistance = screenHeight * _draggableDistance;
-    final delta = details.primaryDelta ?? 0;
-    _controller.value = (_controller.value - delta / travelDistance).clamp(
-      0.0,
-      1.0,
-    );
+    final dragDistance = MediaQuery.sizeOf(context).height * _draggableDistance;
+
+    final delta = details.primaryDelta ?? 0.0;
+
+    _position.value = (_position.value - delta / dragDistance).clamp(0.0, 1.0);
+
+    if (!_holdFullSize) {
+      _morph.value = _position.value;
+    }
   }
 
   void _onDragEnd(DragEndDetails details) {
-    final velocity = details.primaryVelocity ?? 0;
-    final isFlickUp = velocity < -300;
-    final isPastThreshold = velocity <= 300 && _controller.value >= 0.5;
-    final shouldOpen = isFlickUp || isPastThreshold;
+    final velocity = details.primaryVelocity ?? 0.0;
+
+    final shouldOpen = velocity < -300 || (velocity <= 300 && _position.value >= 0.5);
+
+    _isDragging = false;
+    _holdFullSize = false;
 
     widget.isOpenNotifier.value = shouldOpen;
-    _controller.animateTo(shouldOpen ? 1.0 : 0.0, curve: Curves.easeOutCubic);
+    _animateTo(shouldOpen);
   }
 
-  Rect _getPillRect(
-    Size screen,
-    double actualNavHeight,
-    double navProgress,
-    double bottomMargin,
-  ) {
-    final navHeight = AppAlbumCoverSize.sm;
-    final gap = AppSpacing.xs5;
-    final collapsedNavWidth = navHeight;
+  void _onDragCancel() {
+    _isDragging = false;
+    _holdFullSize = false;
 
-    final collapsedRect = Rect.fromLTWH(
-      AppInset.screenEdgePadding + collapsedNavWidth + gap,
-      screen.height - bottomMargin - navHeight,
-      screen.width - (AppInset.screenEdgePadding * 2) - collapsedNavWidth - gap,
-      navHeight,
-    );
-
-    final expandedRect = Rect.fromLTWH(
-      AppInset.screenEdgePadding,
-      screen.height - actualNavHeight - navHeight - gap,
-      screen.width - (AppInset.screenEdgePadding * 2),
-      navHeight,
-    );
-
-    return Rect.lerp(collapsedRect, expandedRect, navProgress)!;
+    _animateTo(widget.isOpenNotifier.value);
   }
 
-  _DockLayout _calculateLayout({
-    required double t,
-    required Rect pill,
-    required Size screen,
-  }) {
-    final sheetRadius = AppGeometry.deviceCornerRadius;
-    final pillRadius = pill.height / 2;
-    const morphThreshold = 0.3;
+  void _animateTo(bool open) {
+    final target = open ? 1.0 : 0.0;
 
-    if (t >= morphThreshold) {
-      final slideProgress = (t - morphThreshold) / (1.0 - morphThreshold);
-      final maxOffset = screen.height * _draggableDistance;
-      final topOffset = (1.0 - slideProgress) * maxOffset;
+    _position.animateTo(target, curve: Curves.easeOutCubic);
 
-      return _DockLayout(
-        rect: Rect.fromLTWH(0, topOffset, screen.width, screen.height),
-        radius: sheetRadius,
-        pillOpacity: 0.0,
-        sheetOpacity: 1.0,
-        borderAlpha: 0.0,
-      );
-    } else {
-      final morphProgress = t / morphThreshold;
-      final slideEndRect = Rect.fromLTWH(
-        0,
-        screen.height * _draggableDistance,
-        screen.width,
-        screen.height,
-      );
-
-      return _DockLayout(
-        rect: Rect.lerp(pill, slideEndRect, morphProgress)!,
-        radius: lerpDouble(pillRadius, sheetRadius, morphProgress)!,
-        pillOpacity: (1.0 - morphProgress).clamp(0.0, 1.0),
-        sheetOpacity: morphProgress.clamp(0.0, 1.0),
-        borderAlpha: lerpDouble(AppGeometry.borderOpacity, 0.0, morphProgress)!,
-      );
-    }
+    _morph.animateTo(target, curve: Curves.easeOutCubic);
   }
 
   @override
   Widget build(BuildContext context) {
     final screen = MediaQuery.sizeOf(context);
-    final actualNavHeight = AppInset.bottomNavHeightWithPad(context);
-    final bottomMargin = AppInset.bottomMargin(context);
     final topSafeArea = MediaQuery.paddingOf(context).top;
+    final bottomMargin = AppInset.bottomMargin(context);
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: widget.isBottomBarVisibleNotifier,
-      builder: (context, navVisible, _) {
-        return TweenAnimationBuilder<double>(
-          tween: Tween<double>(end: navVisible ? 1.0 : 0.0),
-          duration: AppTiming.md,
-          curve: Curves.easeOutCubic,
-          builder: (context, navProgress, _) {
-            return AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                final t = _controller.value;
-                final pill = _getPillRect(
-                  screen,
-                  actualNavHeight,
-                  navProgress,
-                  bottomMargin,
-                );
-                final layout = _calculateLayout(
-                  t: t,
-                  pill: pill,
-                  screen: screen,
-                );
+    return AnimatedBuilder(
+      animation: Listenable.merge([_position, _morph]),
+      builder: (context, _) {
+        final position = _position.value;
+        final morph = _morph.value;
 
-                // --- ALBUM ART RECT CALCULATION ---
-                // 1. Miniplayer cover rect relative to dock inner bounds
-                const miniArtSize = AppAlbumCoverSize.xs;
-                final miniArtTop = (pill.height - miniArtSize) / 2;
-                const miniArtLeft = AppSpacing.lg;
-                final miniArtRect = Rect.fromLTWH(
-                  miniArtLeft,
-                  miniArtTop,
-                  miniArtSize,
-                  miniArtSize,
-                );
+        // -----------------------------------------------------------------
+        // MINI PLAYER GEOMETRY
+        // -----------------------------------------------------------------
 
-                // 2. FullPlayer cover rect relative to sheet layout top
-                final fullArtSize = screen.width - (horizontalPadding * 2);
-                final topHandleHeight =
-                    (topSafeArea * 1.2) + (AppGeometry.borderWidth * 4);
-                final fullArtTop = topSafeArea + topHandleHeight;
-                final fullArtRect = Rect.fromLTWH(
-                  horizontalPadding,
-                  fullArtTop,
-                  fullArtSize,
-                  fullArtSize,
-                );
+        const navSize = AppAlbumCover.sm;
+        const gap = AppSpacing.xs;
 
-                // 3. Continuous interpolation based on gesture controller progress
-                final currentArtRect = Rect.lerp(miniArtRect, fullArtRect, t)!;
-                final currentRadius = lerpDouble(AppRadii.xs, AppRadii.lg, t)!;
+        final miniPillWidth = screen.width - (AppInset.screenEdgePadding * 2) - navSize - gap;
 
-                return Positioned.fromRect(
-                  rect: layout.rect,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: _onTap,
-                    onVerticalDragStart: _onDragStart,
-                    onVerticalDragUpdate: _onDragUpdate,
-                    onVerticalDragEnd: _onDragEnd,
-                    child: FrostedGlassShell(
-                      radius: layout.radius,
-                      borderAlpha: layout.borderAlpha,
-                      child: Stack(
-                        children: [
-                          Align(
-                            alignment: Alignment.center,
-                            child: SizedBox(
-                              height: pill.height,
-                              child: Opacity(
-                                opacity: layout.pillOpacity,
-                                child: IgnorePointer(
-                                  ignoring: layout.pillOpacity < 0.5,
-                                  child: const MiniPlayerContent(),
-                                ),
-                              ),
-                            ),
-                          ),
+        final miniPillLeft = widget.isLeftHanded
+            ? AppInset.screenEdgePadding + navSize + gap
+            : AppInset.screenEdgePadding;
 
-                          Opacity(
-                            opacity: layout.sheetOpacity,
-                            child: IgnorePointer(
-                              ignoring: layout.sheetOpacity < 0.5,
-                              child: OverflowBox(
-                                alignment: Alignment.topCenter,
-                                minWidth: 0,
-                                maxWidth: double.infinity,
-                                minHeight: 0,
-                                maxHeight: double.infinity,
-                                child: SizedBox(
-                                  width: screen.width,
-                                  height: screen.height,
-                                  child: const FullPlayer(),
-                                ),
-                              ),
-                            ),
-                          ),
+        final miniPillRect = Rect.fromLTWH(
+          miniPillLeft,
+          screen.height - bottomMargin - navSize,
+          miniPillWidth,
+          navSize,
+        );
 
-                          // Floating continuous scaling album art
-                          Positioned.fromRect(
-                            rect: currentArtRect,
-                            child: ValueListenableBuilder<Song?>(
-                              valueListenable: PlayerState.currentSong,
-                              builder: (context, song, _) {
-                                return AlbumArt(
-                                  radius: currentRadius,
-                                  imageBytes: song?.albumArt,
-                                  fallbackIconColor: Colors.white54,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+        const miniArtSize = AppAlbumCover.xs;
+
+        final miniArtRect = Rect.fromLTWH(
+          AppSpacing.lg,
+          (miniPillRect.height - miniArtSize) / 2,
+          miniArtSize,
+          miniArtSize,
+        );
+
+        final miniTitleLeft = AppSpacing.lg + miniArtSize + AppSpacing.md;
+
+        const miniControlsWidth = (kMinInteractiveDimension * 2) + (AppSpacing.md * 2);
+
+        final miniTitleRect = Rect.fromLTWH(
+          miniTitleLeft,
+          (miniPillRect.height - AppAlbumCover.sm) / 2,
+          (miniPillRect.width - miniTitleLeft - miniControlsWidth).clamp(0.0, double.infinity),
+          AppAlbumCover.sm,
+        );
+
+        // -----------------------------------------------------------------
+        // FULL PLAYER GEOMETRY
+        // -----------------------------------------------------------------
+
+        // Only position controls this while dragging.
+        //
+        // Width stays screen.width until morph begins after release.
+        final topOffset = (1.0 - position) * (screen.height * _draggableDistance);
+
+        final fullSheetRect = Rect.fromLTWH(0, topOffset, screen.width, screen.height);
+
+        final fullArtSize = screen.width - (horizontalPadding * 1.2);
+
+        final fullArtTop = topSafeArea + AppSpacing.md + AppSpacing.xs3 + AppSpacing.lg;
+
+        final fullArtRect = Rect.fromLTWH((screen.width - fullArtSize) / 2, fullArtTop, fullArtSize, fullArtSize);
+
+        final fullTitleRect = Rect.fromLTWH(
+          horizontalPadding,
+          fullArtTop + fullArtSize + AppSpacing.lg,
+          screen.width - (horizontalPadding * 2) - (AppAlbumCover.xs * 2),
+          AppAlbumCover.sm,
+        );
+
+        // -----------------------------------------------------------------
+        // MORPH
+        // -----------------------------------------------------------------
+
+        // This is the important change:
+        //
+        // position != morph.
+        //
+        // During a downward drag from the full player:
+        //
+        //     position -> decreases
+        //     morph    -> stays at 1
+        //
+        // Therefore the sheet moves down but remains full width.
+        //
+        // Once released, morph animates toward zero and the card finally
+        // transforms into the mini player.
+        final currentSheetRect = Rect.lerp(miniPillRect, fullSheetRect, morph)!;
+
+        final currentRadius = lerpDouble(miniPillRect.height / 2, AppGeometry.deviceCornerRadius, morph)!;
+
+        final currentArtRect = Rect.lerp(miniArtRect, fullArtRect, morph)!;
+
+        final currentArtRadius = lerpDouble(AppRadii.sm, AppRadii.lg, morph)!;
+
+        final currentTitleRect = Rect.lerp(miniTitleRect, fullTitleRect, morph)!;
+
+        final pillOpacity = (1.0 - (morph / 0.3)).clamp(0.0, 1.0);
+
+        final sheetOpacity = (morph / 0.3).clamp(0.0, 1.0);
+
+        final borderAlpha = lerpDouble(AppGeometry.borderOpacity, 0.0, morph)!;
+
+        // -----------------------------------------------------------------
+        // PLAYER
+        // -----------------------------------------------------------------
+
+        return Positioned.fromRect(
+          rect: currentSheetRect,
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _onTap,
+            onVerticalDragStart: _onDragStart,
+            onVerticalDragUpdate: _onDragUpdate,
+            onVerticalDragEnd: _onDragEnd,
+            onVerticalDragCancel: _onDragCancel,
+            child: FrostedGlassShell(
+              radius: currentRadius,
+              borderAlpha: borderAlpha,
+              child: Stack(
+                children: [
+                  // -------------------------------------------------------
+                  // MINI PLAYER CONTROLS
+                  // -------------------------------------------------------
+
+                  Align(
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      height: miniPillRect.height,
+                      child: Opacity(
+                        opacity: pillOpacity,
+                        child: IgnorePointer(ignoring: pillOpacity < 0.5, child: const MiniPlayerContent()),
                       ),
                     ),
                   ),
-                );
-              },
-            );
-          },
+
+                  // -------------------------------------------------------
+                  // FULL PLAYER
+                  // -------------------------------------------------------
+                  Opacity(
+                    opacity: sheetOpacity,
+                    child: IgnorePointer(
+                      ignoring: sheetOpacity < 0.5,
+                      child: OverflowBox(
+                        alignment: Alignment.topCenter,
+                        minWidth: 0,
+                        maxWidth: double.infinity,
+                        minHeight: 0,
+                        maxHeight: double.infinity,
+                        child: SizedBox(
+                          width: screen.width,
+                          height: screen.height,
+                          child: FullPlayer(progress: morph),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // -------------------------------------------------------
+                  // SHARED ALBUM ART
+                  // -------------------------------------------------------
+                  Positioned.fromRect(
+                    rect: currentArtRect,
+                    child: ValueListenableBuilder<Song?>(
+                      valueListenable: PlayerState.currentSong,
+                      builder: (context, song, _) {
+                        return AlbumArt(
+                          radius: currentArtRadius,
+                          imageBytes: song?.albumArt,
+                          fallbackIconColor: Colors.white54,
+                          showBorder: false,
+                        );
+                      },
+                    ),
+                  ),
+
+                  // -------------------------------------------------------
+                  // SHARED SONG INFO
+                  // -------------------------------------------------------
+                  Positioned.fromRect(
+                    rect: currentTitleRect,
+                    child: ValueListenableBuilder<Song?>(
+                      valueListenable: PlayerState.currentSong,
+                      builder: (context, song, _) {
+                        return _SharedSongInfo(progress: morph, song: song);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
   }
 }
 
-class _DockLayout {
-  final Rect rect;
-  final double radius;
-  final double pillOpacity;
-  final double sheetOpacity;
-  final double borderAlpha;
+class _SharedSongInfo extends StatelessWidget {
+  const _SharedSongInfo({required this.progress, required this.song});
 
-  const _DockLayout({
-    required this.rect,
-    required this.radius,
-    required this.pillOpacity,
-    required this.sheetOpacity,
-    required this.borderAlpha,
-  });
+  final double progress;
+  final Song? song;
+
+  @override
+  Widget build(BuildContext context) {
+    return SongInfo(
+      title: song?.title ?? 'Not Playing',
+      artist: song?.artist ?? (progress < 0.5 ? 'Tap a song to play' : '-'),
+      format: song?.format,
+      showFormat: false,
+      titleStyle: TextStyle(
+        color: AppColors.primaryText,
+        fontWeight: FontWeight.w600,
+        fontSize: lerpDouble(AppSpacing.md, AppSpacing.xl, progress)!,
+        height: 1.1,
+      ),
+      artistStyle: TextStyle(
+        color: AppColors.primaryText.withValues(alpha: lerpDouble(0.7, 0.65, progress)!),
+        fontSize: lerpDouble(AppSpacing.sm, AppSpacing.lg, progress)!,
+        height: 1.1,
+      ),
+      spacing: lerpDouble(AppSpacing.xs5, AppSpacing.xs3, progress)!,
+    );
+  }
 }

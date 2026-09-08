@@ -1,34 +1,37 @@
 import 'package:kosh/player/song.dart';
 
+enum SongSortCriterion { title, artist }
+
 class SongRepository {
-  Future<List<Song>> getAllSongs() async {
-    return [
-      Song(
-        id: '1',
-        title: 'Don\'t You (Forget About Me)',
-        artist: 'Simple Minds',
-        filePath: '/mock/path/1.mp3',
-        format: 'Lossless',
-      ),
-      Song(
-        id: '2',
-        title: 'Bohemian Rhapsody',
-        artist: 'Queen',
-        filePath: '/mock/path/2.mp3',
-        format: 'Hi-Res',
-      ),
-    ];
-  }
+  Future<List<Song>> getAllSongs() async => const [
+    Song(
+      id: '1',
+      title: "Don't You (Forget About Me)",
+      artist: 'Simple Minds',
+      filePath: '/mock/path/1.mp3',
+      format: 'Lossless',
+    ),
+    Song(
+      id: '2',
+      title: 'Bohemian Rhapsody',
+      artist: 'Queen',
+      filePath: '/mock/path/2.mp3',
+      format: 'Hi-Res',
+    ),
+  ];
 
-  Future<List<Song>> getSongsSortedBy(String criterion) async {
+  Future<List<Song>> getSongsSortedBy(SongSortCriterion criterion) async {
     final songs = await getAllSongs();
-
-    if (criterion == 'title') {
-      songs.sort((a, b) => a.title.compareTo(b.title));
-    } else if (criterion == 'artist') {
-      songs.sort((a, b) => a.artist.compareTo(b.artist));
+    switch (criterion) {
+      case SongSortCriterion.title:
+        songs.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
+      case SongSortCriterion.artist:
+        songs.sort(
+          (a, b) => a.artist.toLowerCase().compareTo(b.artist.toLowerCase()),
+        );
     }
-
     return songs;
   }
 }
