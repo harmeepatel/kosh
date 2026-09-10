@@ -169,19 +169,16 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
         //
         // Width stays screen.width until morph begins after release.
         final topOffset = (1.0 - position) * (screen.height * _draggableDistance);
-
         final fullSheetRect = Rect.fromLTWH(0, topOffset, screen.width, screen.height);
-
         final fullArtSize = screen.width - (horizontalPadding * 1.2);
-
         final fullArtTop = topSafeArea + AppSpacing.md + AppSpacing.xs3 + AppSpacing.lg;
-
         final fullArtRect = Rect.fromLTWH((screen.width - fullArtSize) / 2, fullArtTop, fullArtSize, fullArtSize);
+        const fullPlayerActionsWidth = kMinInteractiveDimension * 2;
 
         final fullTitleRect = Rect.fromLTWH(
           horizontalPadding,
           fullArtTop + fullArtSize + AppSpacing.lg,
-          screen.width - (horizontalPadding * 2) - (AppAlbumCover.xs * 2),
+          (screen.width - (horizontalPadding * 2) - fullPlayerActionsWidth).clamp(0.0, double.infinity),
           AppAlbumCover.sm,
         );
 
@@ -206,7 +203,15 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
 
         final currentRadius = lerpDouble(miniPillRect.height / 2, AppGeometry.deviceCornerRadius, morph)!;
 
-        final currentArtRect = Rect.lerp(miniArtRect, fullArtRect, morph)!;
+        final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+        double snap(double value) => (value * devicePixelRatio).round() / devicePixelRatio;
+        final lerpedArtRect = Rect.lerp(miniArtRect, fullArtRect, morph)!;
+        final currentArtRect = Rect.fromLTWH(
+          snap(lerpedArtRect.left),
+          snap(lerpedArtRect.top),
+          snap(lerpedArtRect.width),
+          snap(lerpedArtRect.height),
+        );
 
         final currentArtRadius = lerpDouble(AppRadii.sm, AppRadii.lg, morph)!;
 

@@ -11,6 +11,7 @@ import 'package:kosh/widgets/player_dock.dart';
 import 'package:kosh/widgets/screen_content.dart';
 import 'package:kosh/widgets/song_list_tile.dart';
 import 'package:kosh/widgets/top_bar.dart';
+import 'package:kosh/player/state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,8 @@ Future<void> main() async {
     androidNotificationOngoing: true,
     preloadArtwork: true,
   );
+
+  PlayerState.initialize();
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 

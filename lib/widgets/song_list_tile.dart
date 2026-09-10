@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
 import 'package:kosh/player/song.dart';
-import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
 import 'package:kosh/widgets/album_art.dart';
 import 'package:kosh/widgets/song_info.dart';
 
 class SongListTile extends StatelessWidget {
-  const SongListTile({super.key, required this.song});
+  const SongListTile({super.key, required this.song, this.onTap});
 
   final Song song;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -18,9 +18,7 @@ class SongListTile extends StatelessWidget {
       label: '${song.title}, ${song.artist}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          PlayerState.playSong(song);
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppInset.screenEdgePadding, vertical: AppSpacing.xs4),
           child: Row(

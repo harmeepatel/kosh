@@ -182,7 +182,7 @@ class _PlaybackControls extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          onPressed: () {},
+          onPressed: PlayerState.skipToPrevious,
           iconSize: AppIcon.md,
           icon: const Icon(SFSymbols.backward_fill, color: Colors.white),
         ),
@@ -199,7 +199,7 @@ class _PlaybackControls extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.xxxl),
         IconButton(
-          onPressed: () {},
+          onPressed: PlayerState.skipToNext,
           iconSize: AppIcon.md,
           icon: const Icon(SFSymbols.forward_fill, color: Colors.white),
         ),

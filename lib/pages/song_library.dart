@@ -11,6 +11,7 @@ import 'package:kosh/widgets/song_list_tile.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:kosh/player/state.dart';
 
 // =============================================================================
 // METADATA ABSTRACTION (Shared between Android & iOS)
@@ -259,7 +260,12 @@ class _SongListViewState extends State<SongListView> {
                       color: AppColors.divider,
                     ),
                     itemBuilder: (context, i) {
-                      return SongListTile(song: songs[i]);
+                      return SongListTile(
+                        song: songs[i],
+                        onTap: () {
+                          PlayerState.playQueue(songs, i);
+                        },
+                      );
                     },
                   ),
                 ),

@@ -27,57 +27,72 @@ class AlbumArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget content;
-    if (imageBytes != null) {
-      content = Image.memory(imageBytes!, fit: BoxFit.cover);
-    } else if (imageProvider != null) {
-      content = Image(image: imageProvider!, fit: BoxFit.cover);
-    } else if (customFallback != null) {
-      content = customFallback!;
-    } else {
-      content = Center(child: Icon(SFSymbols.music_note, color: fallbackIconColor));
-    }
-
     final borderRadius = SmoothBorderRadius(cornerRadius: radius, cornerSmoothing: AppRadii.cornerSmoothing);
+
+    final hasArtwork = imageBytes != null || imageProvider != null;
 
     return SizedBox(
       width: size,
       height: size,
       child: AspectRatio(
         aspectRatio: 1,
-        child: Container(
-          decoration: ShapeDecoration(
-            shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: radius,
-                spreadRadius: radius / AppGeometry.ratio,
-              ),
-            ],
-            shape: SmoothRectangleBorder(borderRadius: borderRadius),
-          ),
-          child: ClipSmoothRect(
-            radius: borderRadius,
-            clipBehavior: Clip.antiAlias,
-            child: Container(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final logicalSize = size ?? constraints.maxWidth;
+            final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
+
+            final decodeSize = (logicalSize * devicePixelRatio).round();
+
+            final Widget content;
+
+            if (imageBytes != null) {
+              content = Image.memory(
+                imageBytes!,
+                fit: BoxFit.cover,
+                cacheWidth: decodeSize,
+                cacheHeight: decodeSize,
+                gaplessPlayback: true,
+              );
+            } else if (imageProvider != null) {
+              content = Image(image: imageProvider!, fit: BoxFit.cover, gaplessPlayback: true);
+            } else if (customFallback != null) {
+              content = customFallback!;
+            } else {
+              content = Center(child: Icon(SFSymbols.music_note, color: fallbackIconColor));
+            }
+
+            return Container(
               decoration: ShapeDecoration(
-                color: AppColors.albumPlaceholder,
+                shadows: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    blurRadius: radius * pow(AppGeometry.ratio, 2),
+                    spreadRadius: radius / pow(AppGeometry.ratio, 2),
+                  ),
+                ],
                 shape: SmoothRectangleBorder(borderRadius: borderRadius),
               ),
-              foregroundDecoration: showBorder
-                  ? ShapeDecoration(
-                      shape: SmoothRectangleBorder(
-                        side: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          width: (AppGeometry.borderWidth * 2) / pow(AppGeometry.ratio, 2),
-                        ),
-                        borderRadius: borderRadius,
-                      ),
-                    )
-                  : null,
-              child: content,
-            ),
-          ),
+              child: ClipSmoothRect(
+                radius: borderRadius,
+                clipBehavior: Clip.antiAlias,
+                child: Container(
+                  color: hasArtwork ? Colors.black : AppColors.albumPlaceholder,
+                  foregroundDecoration: showBorder
+                      ? ShapeDecoration(
+                          shape: SmoothRectangleBorder(
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              width: (AppGeometry.borderWidth * 2) / pow(AppGeometry.ratio, 2),
+                            ),
+                            borderRadius: borderRadius,
+                          ),
+                        )
+                      : null,
+                  child: content,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
