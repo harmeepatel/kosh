@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
@@ -15,19 +15,23 @@ class PlayerState {
   static final ValueNotifier<Song?> currentSong = ValueNotifier<Song?>(null);
   static final ValueNotifier<bool> isPlaying = ValueNotifier<bool>(false);
   static final ValueNotifier<List<Song>> queue = ValueNotifier<List<Song>>(<Song>[]);
+  static final ValueNotifier<Uri?> currentArtworkUri = ValueNotifier<Uri?>(null);
+  static final List<StreamSubscription<dynamic>> _subscriptions = [];
+  static final Map<String, Uri?> _artworkUriCache = {};
+  static List<Uri?> _queueArtworkUris = <Uri?>[];
+  static Future<Directory>? _artworkDirectoryFuture;
 
   static int _loadId = 0;
-
-  // ---------------------------------------------------------------------------
-  // PLAYER STATE -> APP STATE
-  // ---------------------------------------------------------------------------
-
-  static final List<StreamSubscription<dynamic>> _subscriptions = [];
-
   static bool _initialized = false;
+  static bool _isLoadingQueue = false;
+
+  // ---------------------------------------------------------------------------
+  // INITIALIZATION
+  // ---------------------------------------------------------------------------
 
   static void initialize() {
     if (_initialized) return;
+
     _initialized = true;
 
     _subscriptions.add(
@@ -51,11 +55,11 @@ class PlayerState {
 
         final song = songs[index];
 
-        if (currentSong.value?.id == song.id) {
-          return;
+        if (currentSong.value?.id != song.id) {
+          currentSong.value = song;
         }
 
-        currentSong.value = song;
+        currentArtworkUri.value = index < _queueArtworkUris.length ? _queueArtworkUris[index] : null;
       }),
     );
   }
@@ -70,6 +74,7 @@ class PlayerState {
     currentSong.dispose();
     isPlaying.dispose();
     queue.dispose();
+    currentArtworkUri.dispose();
 
     await _player.dispose();
 
@@ -79,8 +84,6 @@ class PlayerState {
   // ---------------------------------------------------------------------------
   // PLAYBACK
   // ---------------------------------------------------------------------------
-
-  static bool _isLoadingQueue = false;
 
   static Future<void> playQueue(List<Song> songs, int startIndex) async {
     if (songs.isEmpty) return;
@@ -92,17 +95,24 @@ class PlayerState {
     _isLoadingQueue = true;
 
     try {
-      final sources = await Future.wait(newQueue.map(_createAudioSource));
+      final prepared = await Future.wait(newQueue.map(_prepareSource));
 
-      // User may have selected another song while sources were loading.
+      // User may have selected another song while the queue was preparing.
       if (loadId != _loadId) return;
 
+      final sources = [for (final item in prepared) item.source];
+
+      final artworkUris = [for (final item in prepared) item.artUri];
+
       queue.value = newQueue;
+      _queueArtworkUris = artworkUris;
+
       currentSong.value = newQueue[startIndex];
+      currentArtworkUri.value = artworkUris[startIndex];
 
       await _player.setAudioSources(sources, initialIndex: startIndex, initialPosition: Duration.zero);
 
-      // User may have selected another song while the player was loading.
+      // User may have selected another song while just_audio was loading.
       if (loadId != _loadId) return;
 
       _player.play();
@@ -112,14 +122,13 @@ class PlayerState {
       debugPrint('Could not start queue: $error');
       debugPrintStack(stackTrace: stackTrace);
     } finally {
-      // Only the newest load is allowed to clear this flag.
+      // Only the newest request is allowed to clear this flag.
       if (loadId == _loadId) {
         _isLoadingQueue = false;
       }
     }
   }
 
-  // Keep this for callers that genuinely want to play one song only.
   static Future<void> playSong(Song song) {
     return playQueue([song], 0);
   }
@@ -136,8 +145,6 @@ class PlayerState {
       return;
     }
 
-    // If the entire queue finished, Play should start again
-    // instead of remaining stuck at the completed position.
     if (_player.processingState == ProcessingState.completed) {
       await _player.seek(Duration.zero, index: _player.currentIndex ?? 0);
     }
@@ -152,9 +159,6 @@ class PlayerState {
   }
 
   static Future<void> skipToPrevious() async {
-    // Common music-player behaviour:
-    // if we're already several seconds into the track,
-    // restart it instead of jumping backward immediately.
     if (_player.position > const Duration(seconds: 3)) {
       await _player.seek(Duration.zero);
       return;
@@ -168,16 +172,18 @@ class PlayerState {
   }
 
   // ---------------------------------------------------------------------------
-  // AUDIO SOURCE / BACKGROUND METADATA
+  // AUDIO SOURCE
   // ---------------------------------------------------------------------------
 
-  static Future<AudioSource> _createAudioSource(Song song) async {
+  static Future<_PreparedSource> _prepareSource(Song song) async {
     final artUri = await _cacheArtwork(song);
 
-    return AudioSource.uri(
+    final source = AudioSource.uri(
       _audioUri(song.filePath),
       tag: MediaItem(id: song.id, title: song.title, artist: song.artist, album: song.album, artUri: artUri),
     );
+
+    return _PreparedSource(source: source, artUri: artUri);
   }
 
   static Uri _audioUri(String path) {
@@ -191,20 +197,23 @@ class PlayerState {
     return Uri.file(path);
   }
 
+  // ---------------------------------------------------------------------------
+  // ARTWORK
+  // ---------------------------------------------------------------------------
+
   static Future<Uri?> _cacheArtwork(Song song) async {
+    if (_artworkUriCache.containsKey(song.id)) {
+      return _artworkUriCache[song.id];
+    }
+
     final bytes = await ArtworkService.forSong(song);
 
     if (bytes == null || bytes.isEmpty) {
+      _artworkUriCache[song.id] = null;
       return null;
     }
 
-    final cacheDirectory = await getTemporaryDirectory();
-
-    final artworkDirectory = Directory('${cacheDirectory.path}/kosh_artwork');
-
-    if (!await artworkDirectory.exists()) {
-      await artworkDirectory.create(recursive: true);
-    }
+    final artworkDirectory = await _getArtworkDirectory();
 
     final safeId = song.id.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
 
@@ -214,6 +223,31 @@ class PlayerState {
       await file.writeAsBytes(bytes, flush: true);
     }
 
-    return file.uri;
+    final uri = file.uri;
+
+    _artworkUriCache[song.id] = uri;
+
+    return uri;
   }
+
+  static Future<Directory> _getArtworkDirectory() {
+    return _artworkDirectoryFuture ??= () async {
+      final cacheDirectory = await getTemporaryDirectory();
+
+      final directory = Directory('${cacheDirectory.path}/kosh_artwork');
+
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
+      return directory;
+    }();
+  }
+}
+
+class _PreparedSource {
+  const _PreparedSource({required this.source, required this.artUri});
+
+  final AudioSource source;
+  final Uri? artUri;
 }

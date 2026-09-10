@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -41,24 +42,29 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
     widget.isOpenNotifier.addListener(_syncWithExternalState);
   }
 
   @override
   void dispose() {
     widget.isOpenNotifier.removeListener(_syncWithExternalState);
+
     _position.dispose();
     _morph.dispose();
+
     super.dispose();
   }
 
   void _syncWithExternalState() {
     if (_isDragging) return;
+
     _animateTo(widget.isOpenNotifier.value);
   }
 
   void _onTap() {
     if (_position.value > 0) return;
+
     widget.isOpenNotifier.value = true;
   }
 
@@ -91,6 +97,7 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
     _holdFullSize = false;
 
     widget.isOpenNotifier.value = shouldOpen;
+
     _animateTo(shouldOpen);
   }
 
@@ -114,6 +121,7 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
     final screen = MediaQuery.sizeOf(context);
     final topSafeArea = MediaQuery.paddingOf(context).top;
     final bottomMargin = AppInset.bottomMargin(context);
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     return AnimatedBuilder(
       animation: Listenable.merge([_position, _morph]),
@@ -165,14 +173,16 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
         // FULL PLAYER GEOMETRY
         // -----------------------------------------------------------------
 
-        // Only position controls this while dragging.
-        //
-        // Width stays screen.width until morph begins after release.
         final topOffset = (1.0 - position) * (screen.height * _draggableDistance);
+
         final fullSheetRect = Rect.fromLTWH(0, topOffset, screen.width, screen.height);
+
         final fullArtSize = screen.width - (horizontalPadding * 1.2);
+
         final fullArtTop = topSafeArea + AppSpacing.md + AppSpacing.xs3 + AppSpacing.lg;
+
         final fullArtRect = Rect.fromLTWH((screen.width - fullArtSize) / 2, fullArtTop, fullArtSize, fullArtSize);
+
         const fullPlayerActionsWidth = kMinInteractiveDimension * 2;
 
         final fullTitleRect = Rect.fromLTWH(
@@ -186,26 +196,16 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
         // MORPH
         // -----------------------------------------------------------------
 
-        // This is the important change:
-        //
-        // position != morph.
-        //
-        // During a downward drag from the full player:
-        //
-        //     position -> decreases
-        //     morph    -> stays at 1
-        //
-        // Therefore the sheet moves down but remains full width.
-        //
-        // Once released, morph animates toward zero and the card finally
-        // transforms into the mini player.
         final currentSheetRect = Rect.lerp(miniPillRect, fullSheetRect, morph)!;
 
         final currentRadius = lerpDouble(miniPillRect.height / 2, AppGeometry.deviceCornerRadius, morph)!;
 
-        final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
-        double snap(double value) => (value * devicePixelRatio).round() / devicePixelRatio;
+        double snap(double value) {
+          return (value * devicePixelRatio).round() / devicePixelRatio;
+        }
+
         final lerpedArtRect = Rect.lerp(miniArtRect, fullArtRect, morph)!;
+
         final currentArtRect = Rect.fromLTWH(
           snap(lerpedArtRect.left),
           snap(lerpedArtRect.top),
@@ -222,6 +222,12 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
         final sheetOpacity = (morph / 0.3).clamp(0.0, 1.0);
 
         final borderAlpha = lerpDouble(AppGeometry.borderOpacity, 0.0, morph)!;
+
+        // Stable decode size.
+        //
+        // This is based on the FULL player artwork size and therefore
+        // does not change while mini -> full -> mini animates.
+        final artworkDecodeSize = (fullArtSize * devicePixelRatio).round();
 
         // -----------------------------------------------------------------
         // PLAYER
@@ -283,12 +289,24 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
                   // -------------------------------------------------------
                   Positioned.fromRect(
                     rect: currentArtRect,
-                    child: ValueListenableBuilder<Song?>(
-                      valueListenable: PlayerState.currentSong,
-                      builder: (context, song, _) {
+                    child: ValueListenableBuilder<Uri?>(
+                      valueListenable: PlayerState.currentArtworkUri,
+                      builder: (context, artworkUri, _) {
+                        final ImageProvider? imageProvider;
+
+                        if (artworkUri == null) {
+                          imageProvider = null;
+                        } else {
+                          imageProvider = ResizeImage(
+                            FileImage(File.fromUri(artworkUri)),
+                            width: artworkDecodeSize,
+                            height: artworkDecodeSize,
+                          );
+                        }
+
                         return AlbumArt(
                           radius: currentArtRadius,
-                          imageBytes: song?.albumArt,
+                          imageProvider: imageProvider,
                           fallbackIconColor: Colors.white54,
                           showBorder: false,
                         );
