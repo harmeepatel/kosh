@@ -19,7 +19,7 @@ class FrostedGlassShell extends StatelessWidget {
   final double blurSigma;
   final double grainOpacity;
 
-  Color get backgroundColor => Colors.black.withValues(alpha: 0.5);
+  Color get backgroundColor => Colors.black.withValues(alpha: 0.64);
 
   @override
   Widget build(BuildContext context) {

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:kosh/player/song.dart';
 import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
 import 'package:kosh/widgets/album_art.dart';
@@ -21,7 +21,7 @@ class PlayerDock extends StatefulWidget {
   State<PlayerDock> createState() => _PlayerDockState();
 }
 
-class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
+class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin, WidgetsBindingObserver {
   static const double _draggableDistance = 0.7;
 
   late final AnimationController _position = AnimationController(
@@ -43,11 +43,23 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
+    WidgetsBinding.instance.addObserver(this);
     widget.isOpenNotifier.addListener(_syncWithExternalState);
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      // The audio handler can continue changing media while iOS suspends UI
+      // rendering. Force the first live frame after resume to read the
+      // handler's retained MediaItem directly.
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.isOpenNotifier.removeListener(_syncWithExternalState);
 
     _position.dispose();
@@ -289,22 +301,41 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
                   // -------------------------------------------------------
                   Positioned.fromRect(
                     rect: currentArtRect,
-                    child: ValueListenableBuilder<Uri?>(
-                      valueListenable: PlayerState.currentArtworkUri,
-                      builder: (context, artworkUri, _) {
+                    child: StreamBuilder<MediaItem?>(
+                      stream: PlayerState.mediaItemStream,
+                      initialData: PlayerState.currentMediaItem,
+                      builder: (context, snapshot) {
+                        // The retained handler value wins over a stale
+                        // StreamBuilder snapshot on the first frame after
+                        // resume/background transitions.
+                        final item = PlayerState.currentMediaItem ?? snapshot.data;
+                        final song = PlayerState.songForMediaItem(item);
+                        final artworkUri = item?.artUri;
+
+                        final bytes = song?.albumArt;
                         final ImageProvider? imageProvider;
 
-                        if (artworkUri == null) {
-                          imageProvider = null;
-                        } else {
+                        if (bytes != null && bytes.isNotEmpty) {
+                          // Zero filesystem round-trip for Kosh itself while
+                          // retaining the same fixed full-player decode size
+                          // that prevents mini/full morph re-decodes.
+                          imageProvider = ResizeImage(
+                            MemoryImage(bytes),
+                            width: artworkDecodeSize,
+                            height: artworkDecodeSize,
+                          );
+                        } else if (artworkUri != null) {
                           imageProvider = ResizeImage(
                             FileImage(File.fromUri(artworkUri)),
                             width: artworkDecodeSize,
                             height: artworkDecodeSize,
                           );
+                        } else {
+                          imageProvider = null;
                         }
 
                         return AlbumArt(
+                          key: ValueKey(item?.id),
                           radius: currentArtRadius,
                           imageProvider: imageProvider,
                           fallbackIconColor: Colors.white54,
@@ -319,10 +350,12 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
                   // -------------------------------------------------------
                   Positioned.fromRect(
                     rect: currentTitleRect,
-                    child: ValueListenableBuilder<Song?>(
-                      valueListenable: PlayerState.currentSong,
-                      builder: (context, song, _) {
-                        return _SharedSongInfo(progress: morph, song: song);
+                    child: StreamBuilder<MediaItem?>(
+                      stream: PlayerState.mediaItemStream,
+                      initialData: PlayerState.currentMediaItem,
+                      builder: (context, snapshot) {
+                        final item = PlayerState.currentMediaItem ?? snapshot.data;
+                        return _SharedSongInfo(progress: morph, item: item);
                       },
                     ),
                   ),
@@ -337,17 +370,17 @@ class _PlayerDockState extends State<PlayerDock> with TickerProviderStateMixin {
 }
 
 class _SharedSongInfo extends StatelessWidget {
-  const _SharedSongInfo({required this.progress, required this.song});
+  const _SharedSongInfo({required this.progress, required this.item});
 
   final double progress;
-  final Song? song;
+  final MediaItem? item;
 
   @override
   Widget build(BuildContext context) {
     return SongInfo(
-      title: song?.title ?? 'Not Playing',
-      artist: song?.artist ?? (progress < 0.5 ? 'Tap a song to play' : '-'),
-      format: song?.format,
+      title: item?.title ?? 'Not Playing',
+      artist: item?.artist ?? (progress < 0.5 ? 'Tap a song to play' : '-'),
+      format: item?.extras?['format'] as String?,
       showFormat: false,
       titleStyle: TextStyle(
         color: AppColors.primaryText,

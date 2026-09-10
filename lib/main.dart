@@ -2,8 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
-import 'package:just_audio_background/just_audio_background.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:kosh/pages/song_library.dart';
+import 'package:kosh/player/audio_handler.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/style/style.dart';
 import 'package:kosh/widgets/bottom_tab_bar.dart';
@@ -16,14 +17,17 @@ import 'package:kosh/player/state.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'app.kosh.audio',
-    androidNotificationChannelName: 'Music playback',
-    androidNotificationOngoing: true,
-    preloadArtwork: true,
+  final audioHandler = await AudioService.init<KoshAudioHandler>(
+    builder: KoshAudioHandler.new,
+    config: const AudioServiceConfig(
+      androidNotificationChannelId: 'app.kosh.audio',
+      androidNotificationChannelName: 'Music playback',
+      androidNotificationOngoing: true,
+      preloadArtwork: true,
+    ),
   );
 
-  PlayerState.initialize();
+  PlayerState.initialize(audioHandler);
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
