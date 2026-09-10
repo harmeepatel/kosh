@@ -18,7 +18,9 @@ class SongListTile extends StatelessWidget {
       label: '${song.title}, ${song.artist}',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => PlayerState.currentSong.value = song,
+        onTap: () {
+          PlayerState.playSong(song);
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppInset.screenEdgePadding, vertical: AppSpacing.xs4),
           child: Row(

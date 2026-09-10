@@ -50,7 +50,7 @@ class FullPlayer extends StatelessWidget {
                     const _AlbumArtCover(),
                     const _SongDetails(),
 
-                    _PlaybackProgress(mediaType: song?.format),
+                    _PlaybackProgress(mediaType: song?.format, trackLength: "3:25"),
 
                     const _PlaybackControls(),
                     const _VolumeControls(),
@@ -108,11 +108,12 @@ class _SongDetails extends StatelessWidget {
 }
 
 class _PlaybackProgress extends StatelessWidget {
-  const _PlaybackProgress({this.mediaType});
+  const _PlaybackProgress({this.mediaType, required this.trackLength});
 
   static const _secondaryText = TextStyle(color: Colors.white54, fontSize: AppSpacing.sm, fontWeight: FontWeight.w500);
 
   final String? mediaType;
+  final String trackLength;
 
   @override
   Widget build(BuildContext context) {
@@ -163,7 +164,7 @@ class _PlaybackProgress extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Text('-3:23', style: _secondaryText),
+                Text(trackLength, style: _secondaryText),
               ],
             ),
         ],
@@ -186,10 +187,15 @@ class _PlaybackControls extends StatelessWidget {
           icon: const Icon(SFSymbols.backward_fill, color: Colors.white),
         ),
         const SizedBox(width: AppSpacing.xxxl),
-        IconButton(
-          onPressed: () {},
-          iconSize: AppIcon.lg,
-          icon: const Icon(SFSymbols.play_fill, color: Colors.white),
+        ValueListenableBuilder<bool>(
+          valueListenable: PlayerState.isPlaying,
+          builder: (context, isPlaying, _) {
+            return IconButton(
+              onPressed: PlayerState.togglePlayPause,
+              iconSize: AppIcon.lg,
+              icon: Icon(isPlaying ? SFSymbols.pause_fill : SFSymbols.play_fill, color: Colors.white),
+            );
+          },
         ),
         const SizedBox(width: AppSpacing.xxxl),
         IconButton(

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:kosh/pages/song_library.dart';
 import 'package:kosh/player/song.dart';
 import 'package:kosh/style/style.dart';
@@ -13,7 +14,16 @@ import 'package:kosh/widgets/top_bar.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'app.kosh.audio',
+    androidNotificationChannelName: 'Music playback',
+    androidNotificationOngoing: true,
+    preloadArtwork: true,
+  );
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   runApp(const MainApp());
 }
 
@@ -154,6 +164,7 @@ class PlaceholderSongList extends StatelessWidget {
           title: '$title Song ${index + 1}',
           artist: 'Artist Name',
           filePath: '',
+          length: 128,
           format: 'test',
         ),
       ),

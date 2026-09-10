@@ -19,6 +19,8 @@ dependencies:
   flutter_taglib: ^1.5.2
   figma_squircle: ^0.6.3
   marquee: ^2.3.0
+  just_audio: ^0.10.6
+  just_audio_background: ^0.0.1-beta.17
 
 dev_dependencies:
   flutter_test:

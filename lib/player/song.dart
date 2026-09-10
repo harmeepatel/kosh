@@ -6,6 +6,7 @@ class Song {
     required this.title,
     required this.artist,
     required this.filePath,
+    required this.length,
     this.album,
     this.format,
     this.albumArt,
@@ -15,6 +16,7 @@ class Song {
   final String title;
   final String artist;
   final String filePath;
+  final int length;
   final String? album;
   final String? format;
   final Uint8List? albumArt;
@@ -24,6 +26,7 @@ class Song {
     title: map['title'] as String,
     artist: map['artist'] as String,
     filePath: map['filePath'] as String,
+    length: map['length'] as int,
     album: map['album'] as String?,
     format: map['format'] as String?,
     albumArt: map['albumArt'] as Uint8List?,
@@ -34,6 +37,7 @@ class Song {
     'title': title,
     'artist': artist,
     'filePath': filePath,
+    'length': length,
     'album': album,
     'format': format,
     'albumArt': albumArt,

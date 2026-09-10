@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kosh/player/state.dart';
 import 'package:kosh/style/style.dart';
 import 'package:flutter_cupertino_symbols/flutter_cupertino_symbols.dart';
 
@@ -17,10 +18,19 @@ class MiniPlayerContent extends StatelessWidget {
             onPressed: () {},
             icon: const Icon(SFSymbols.suit_heart, color: Colors.white, size: AppIcon.sm),
           ),
-          IconButton(
-            tooltip: 'Play',
-            onPressed: () {},
-            icon: const Icon(SFSymbols.play_fill, color: Colors.white, size: AppIcon.sm),
+          ValueListenableBuilder<bool>(
+            valueListenable: PlayerState.isPlaying,
+            builder: (context, isPlaying, _) {
+              return IconButton(
+                tooltip: isPlaying ? 'Pause' : 'Play',
+                onPressed: PlayerState.togglePlayPause,
+                icon: Icon(
+                  isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: AppIcon.md,
+                ),
+              );
+            },
           ),
         ],
       ),

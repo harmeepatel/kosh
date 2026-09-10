@@ -122,6 +122,7 @@ class SongLibrary {
             artist: (t.artist == null || t.artist == '<unknown>') ? 'Unknown Artist' : t.artist!,
             album: t.album,
             filePath: t.uri!,
+            length: t.duration!,
           ),
         )
         .toList();
@@ -154,17 +155,20 @@ class SongLibrary {
       final fileName = file.uri.pathSegments.last;
       final fallbackTitle = fileName.contains('.') ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
 
-      songs.add(
-        Song(
-          id: file.path,
-          title: metadata?.title ?? fallbackTitle,
-          artist: metadata?.artist ?? 'Unknown Artist',
-          album: metadata?.album,
-          format: metadata?.format,
-          albumArt: metadata?.coverData,
-          filePath: file.path,
-        ),
-      );
+      if (metadata != null) {
+        songs.add(
+          Song(
+            id: file.path,
+            title: metadata.title ?? fallbackTitle,
+            artist: metadata.artist ?? 'Unknown Artist',
+            album: metadata.album,
+            format: metadata.format,
+            length: metadata.duration!,
+            albumArt: metadata.coverData,
+            filePath: file.path,
+          ),
+        );
+      }
     }
     songs.sort((a, b) => a.title.compareTo(b.title));
     return songs;
